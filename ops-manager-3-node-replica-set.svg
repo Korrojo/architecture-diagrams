@@ -1,60 +1,92 @@
-<svg width="606" height="1284" viewBox="0 0 606 1284" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="1440" height="900" viewBox="0 0 1440 900" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="Ops Manager Managed Three-Node Replica Set">
-<g id="MongoDB Ops Manager">
-<rect id="Shape" x="191.5" y="386" width="224" height="128" rx="6" fill="#2563EB" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round"/>
-<text id="Text" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="214.154" y="455.818">MongoDB Ops Manager</tspan></text>
+<rect width="1440" height="900" fill="#F8FAFC"/>
+<rect id="Rectangle" width="1440" height="104" fill="#0F172A"/>
+<text id="MONGODB REFERENCE ARCHITECTURE" fill="#93C5FD" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="600" letter-spacing="0em"><tspan x="64" y="34.7273">MONGODB REFERENCE ARCHITECTURE</tspan></text>
+<text id="Ops Manager&#226;&#128;&#147;managed three-node replica set" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" font-weight="600" letter-spacing="0em"><tspan x="64" y="76.9091">Ops Manager&#x2013;managed three-node replica set</tspan></text>
+<rect id="Rectangle_2" x="1186" y="36" width="190" height="30" rx="15" fill="#1E293B"/>
+<text id="SANITIZED EXAMPLE" fill="#CBD5E1" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="1214.86" y="52.7273">SANITIZED EXAMPLE</tspan></text>
+<text id="CONTROL PLANE" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="600" letter-spacing="0em"><tspan x="72" y="144.727">CONTROL PLANE</tspan></text>
+<rect id="Rectangle_3" x="72.5" y="156.5" width="1295" height="177" rx="13.5" fill="#EFF6FF" stroke="#BFDBFE"/>
+<rect id="Rectangle_4" x="104.5" y="196.5" width="245" height="93" rx="11.5" fill="white" stroke="#BFDBFE"/>
+<rect id="Rectangle_5" x="124" y="216" width="52" height="52" rx="26" fill="#0F172A"/>
+<text id="DBA" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="14" font-weight="600" letter-spacing="0em"><tspan x="135.262" y="242.591">DBA</tspan></text>
+<text id="DBA / Operations" fill="#0F172A" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="600" letter-spacing="0em"><tspan x="194" y="229.318">DBA / Operations</tspan></text>
+<text id="Administers Ops Manager" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="194" y="254.864">Administers Ops Manager</tspan></text>
+<rect id="Rectangle_6" x="468.75" y="180.75" width="788.5" height="124.5" rx="11.25" fill="white" stroke="#93C5FD" stroke-width="1.5"/>
+<rect id="Rectangle_7" x="468" y="180" width="10" height="126" rx="5" fill="#2563EB"/>
+<text id="MongoDB Ops Manager" fill="#0F172A" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="23" font-weight="600" letter-spacing="0em"><tspan x="504" y="221.364">MongoDB Ops Manager</tspan></text>
+<text id="Centralized lifecycle management for the deployment" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="14" letter-spacing="0em"><tspan x="504" y="245.591">Centralized lifecycle management for the deployment</tspan></text>
+<rect id="Rectangle_8" x="504" y="260" width="112" height="30" rx="15" fill="#EFF6FF"/>
+<text id="AUTOMATION" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="515.966" y="276.727">AUTOMATION</tspan></text>
+<rect id="Rectangle_9" x="628" y="260" width="116" height="30" rx="15" fill="#EFF6FF"/>
+<text id="MONITORING" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="643.871" y="276.727">MONITORING</tspan></text>
+<rect id="Rectangle_10" x="756" y="260" width="88" height="30" rx="15" fill="#EFF6FF"/>
+<text id="BACKUP" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="773.372" y="276.727">BACKUP</tspan></text>
+<rect id="Rectangle_11" x="856" y="260" width="92" height="30" rx="15" fill="#EFF6FF"/>
+<text id="ALERTING" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="869.963" y="276.727">ALERTING</tspan></text>
+<text id="Administers" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="370.764" y="223.864">Administers</tspan></text>
+<text id="DATA PLANE" fill="#047857" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="600" letter-spacing="0em"><tspan x="72" y="378.727">DATA PLANE</tspan></text>
+<rect id="Rectangle_12" x="72.5" y="390.5" width="1295" height="419" rx="13.5" fill="white" stroke="#CBD5E1"/>
+<text id="Replica set" fill="#0F172A" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="22" font-weight="600" letter-spacing="0em"><tspan x="104" y="439.5">Replica set</tspan></text>
+<rect id="Rectangle_13" x="242" y="416" width="54" height="30" rx="15" fill="#ECFDF5"/>
+<text id="rs0" fill="#047857" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="258.825" y="432.727">rs0</tspan></text>
+<text id="High availability through one primary and two secondary members" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="14" letter-spacing="0em"><tspan x="104" y="465.591">High availability through one primary and two secondary members</tspan></text>
+<text id="Automation &#194;&#183; Monitoring &#194;&#183; Backup" fill="#1E40AF" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="872" y="440.727">Automation &#xb7; Monitoring &#xb7; Backup</tspan></text>
+<rect id="Rectangle_14" x="124" y="546" width="320" height="160" rx="12" fill="#E2E8F0"/>
+<rect id="Rectangle_15" x="120.5" y="540.5" width="319" height="159" rx="11.5" fill="white" stroke="#CBD5E1"/>
+<rect id="Rectangle_16" x="120" y="540" width="8" height="160" rx="4" fill="#059669"/>
+<rect id="Rectangle_17" x="144" y="564" width="54" height="54" rx="10" fill="#ECFDF5"/>
+<g id="Frame">
+<path id="Vector" d="M171 585C177.627 585 183 582.761 183 580C183 577.239 177.627 575 171 575C164.373 575 159 577.239 159 580C159 582.761 164.373 585 171 585Z" fill="#059669"/>
+<path id="Vector_2" opacity="0.85" d="M159 580V590C159 592.8 164.4 595 171 595C177.6 595 183 592.8 183 590V580" fill="#059669"/>
+<path id="Vector_3" opacity="0.7" d="M159 591V601C159 603.8 164.4 606 171 606C177.6 606 183 603.8 183 601V591" fill="#059669"/>
 </g>
-<g id="DBA / Operations">
-<rect id="Shape_2" x="191.5" y="2" width="224" height="128" rx="6" fill="#475569" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
-<text id="Text_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="238.812" y="71.8182">DBA / Operations</tspan></text>
+<text id="Secondary 1" fill="#0F172A" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" font-weight="600" letter-spacing="0em"><tspan x="216" y="581.273">Secondary 1</tspan></text>
+<text id="mongod &#194;&#183; Member 2" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="14" letter-spacing="0em"><tspan x="216" y="606.591">mongod &#xb7; Member 2</tspan></text>
+<rect id="Rectangle_18" x="216" y="626" width="132" height="30" rx="15" fill="#ECFDF5"/>
+<text id="REPLICA MEMBER" fill="#059669" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="225.354" y="642.727">REPLICA MEMBER</tspan></text>
+<rect id="Rectangle_19" x="564" y="546" width="320" height="160" rx="12" fill="#E2E8F0"/>
+<rect id="Rectangle_20" x="560.5" y="540.5" width="319" height="159" rx="11.5" fill="white" stroke="#CBD5E1"/>
+<rect id="Rectangle_21" x="560" y="540" width="8" height="160" rx="4" fill="#2563EB"/>
+<rect id="Rectangle_22" x="584" y="564" width="54" height="54" rx="10" fill="#EFF6FF"/>
+<g id="Frame_2">
+<path id="Vector_4" d="M611 585C617.627 585 623 582.761 623 580C623 577.239 617.627 575 611 575C604.373 575 599 577.239 599 580C599 582.761 604.373 585 611 585Z" fill="#2563EB"/>
+<path id="Vector_5" opacity="0.85" d="M599 580V590C599 592.8 604.4 595 611 595C617.6 595 623 592.8 623 590V580" fill="#2563EB"/>
+<path id="Vector_6" opacity="0.7" d="M599 591V601C599 603.8 604.4 606 611 606C617.6 606 623 603.8 623 601V591" fill="#2563EB"/>
 </g>
-<g id="Primary">
-<rect id="Shape_3" x="191.5" y="770" width="224" height="128" rx="6" fill="#16A34A" stroke="#14532D" stroke-width="4" stroke-linecap="round"/>
-<text id="Text_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="274.489" y="839.818">Primary</tspan></text>
+<text id="Primary" fill="#0F172A" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" font-weight="600" letter-spacing="0em"><tspan x="656" y="581.273">Primary</tspan></text>
+<text id="mongod &#194;&#183; Member 1" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="14" letter-spacing="0em"><tspan x="656" y="606.591">mongod &#xb7; Member 1</tspan></text>
+<rect id="Rectangle_23" x="656" y="626" width="112" height="30" rx="15" fill="#EFF6FF"/>
+<text id="WRITE TARGET" fill="#2563EB" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="664.399" y="642.727">WRITE TARGET</tspan></text>
+<rect id="Rectangle_24" x="1004" y="546" width="320" height="160" rx="12" fill="#E2E8F0"/>
+<rect id="Rectangle_25" x="1000.5" y="540.5" width="319" height="159" rx="11.5" fill="white" stroke="#CBD5E1"/>
+<rect id="Rectangle_26" x="1000" y="540" width="8" height="160" rx="4" fill="#059669"/>
+<rect id="Rectangle_27" x="1024" y="564" width="54" height="54" rx="10" fill="#ECFDF5"/>
+<g id="Frame_3">
+<path id="Vector_7" d="M1051 585C1057.63 585 1063 582.761 1063 580C1063 577.239 1057.63 575 1051 575C1044.37 575 1039 577.239 1039 580C1039 582.761 1044.37 585 1051 585Z" fill="#059669"/>
+<path id="Vector_8" opacity="0.85" d="M1039 580V590C1039 592.8 1044.4 595 1051 595C1057.6 595 1063 592.8 1063 590V580" fill="#059669"/>
+<path id="Vector_9" opacity="0.7" d="M1039 591V601C1039 603.8 1044.4 606 1051 606C1057.6 606 1063 603.8 1063 601V591" fill="#059669"/>
 </g>
-<g id="Secondary 1">
-<rect id="Shape_4" x="31" y="1154" width="224" height="128" rx="6" fill="#16A34A" stroke="#14532D" stroke-width="4" stroke-linecap="round"/>
-<text id="Text_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="96.7003" y="1223.82">Secondary 1</tspan></text>
-</g>
-<g id="Secondary 2">
-<rect id="Shape_5" x="351" y="1154" width="224" height="128" rx="6" fill="#16A34A" stroke="#14532D" stroke-width="4" stroke-linecap="round"/>
-<text id="Text_5" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="415.575" y="1223.82">Secondary 2</tspan></text>
-</g>
-<g id="Administers">
-<path id="Shape_6" d="M301.5 237.25C301.5 238.355 302.395 239.25 303.5 239.25C304.605 239.25 305.5 238.355 305.5 237.25H303.5H301.5ZM305.5 278.25C305.5 277.145 304.605 276.25 303.5 276.25C302.395 276.25 301.5 277.145 301.5 278.25H303.5H305.5ZM302.086 378.914C302.867 379.695 304.133 379.695 304.914 378.914L317.642 366.186C318.423 365.405 318.423 364.139 317.642 363.358C316.861 362.577 315.595 362.577 314.814 363.358L303.5 374.672L292.186 363.358C291.405 362.577 290.139 362.577 289.358 363.358C288.577 364.139 288.577 365.405 289.358 366.186L302.086 378.914ZM303.5 138H301.5V237.25H303.5H305.5V138H303.5ZM303.5 278.25H301.5V377.5H303.5H305.5V278.25H303.5Z" fill="#757575"/>
-<g id="Text Background">
-<text id="Text_6" fill="black" fill-opacity="0.8" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="258.732" y="263.568">Administers</tspan></text>
-</g>
-</g>
-<g id="Manages and monitors">
-<path id="Shape_7" d="M301.5 621.25C301.5 622.355 302.395 623.25 303.5 623.25C304.605 623.25 305.5 622.355 305.5 621.25H303.5H301.5ZM305.5 662.25C305.5 661.145 304.605 660.25 303.5 660.25C302.395 660.25 301.5 661.145 301.5 662.25H303.5H305.5ZM302.086 762.914C302.867 763.695 304.133 763.695 304.914 762.914L317.642 750.186C318.423 749.405 318.423 748.139 317.642 747.358C316.861 746.577 315.595 746.577 314.814 747.358L303.5 758.672L292.186 747.358C291.405 746.577 290.139 746.577 289.358 747.358C288.577 748.139 288.577 749.405 289.358 750.186L302.086 762.914ZM303.5 522H301.5V621.25H303.5H305.5V522H303.5ZM303.5 662.25H301.5V761.5H303.5H305.5V662.25H303.5Z" fill="#757575"/>
-<g id="Text Background_2">
-<text id="Text_7" fill="black" fill-opacity="0.8" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="217.828" y="647.568">Manages and monitors</tspan></text>
-</g>
-</g>
-<g id="Manages and monitors_2">
-<path id="Shape_8" d="M92.5 797.5C92.5 798.605 93.3954 799.5 94.5 799.5C95.6046 799.5 96.5 798.605 96.5 797.5H94.5H92.5ZM96.5 838.5C96.5 837.395 95.6046 836.5 94.5 836.5C93.3954 836.5 92.5 837.395 92.5 838.5H94.5H96.5ZM104.252 1146.91C105.033 1147.7 106.3 1147.7 107.081 1146.91L119.809 1134.19C120.59 1133.41 120.59 1132.14 119.809 1131.36C119.028 1130.58 117.761 1130.58 116.98 1131.36L105.667 1142.67L94.353 1131.36C93.5719 1130.58 92.3056 1130.58 91.5245 1131.36C90.7435 1132.14 90.7435 1133.41 91.5245 1134.19L104.252 1146.91ZM247.5 522H245.5V538H247.5H249.5V522H247.5ZM223.5 562V560H118.5V562V564H223.5V562ZM94.5 586H92.5V797.5H94.5H96.5V586H94.5ZM94.5 838.5H92.5V1068.42H94.5H96.5V838.5H94.5ZM105.667 1079.58H103.667V1145.5H105.667H107.667V1079.58H105.667ZM94.5 1068.42H92.5C92.5 1072.6 95.8952 1076 100.083 1076V1074V1072C98.1043 1072 96.5 1070.4 96.5 1068.42H94.5ZM118.5 562V560C104.141 560 92.5 571.641 92.5 586H94.5H96.5C96.5 573.85 106.35 564 118.5 564V562ZM100.083 1074V1076C102.062 1076 103.667 1077.6 103.667 1079.58H105.667H107.667C107.667 1075.4 104.271 1072 100.083 1072V1074ZM247.5 538H245.5C245.5 550.15 235.65 560 223.5 560V562V564C237.859 564 249.5 552.359 249.5 538H247.5Z" fill="#757575"/>
-<g id="Text Background_3">
-<text id="Text_8" fill="black" fill-opacity="0.8" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="8.82825" y="823.818">Manages and monitors</tspan></text>
-</g>
-</g>
-<g id="Manages and monitors_3">
-<path id="Shape_9" d="M509.5 797.5C509.5 798.605 510.395 799.5 511.5 799.5C512.605 799.5 513.5 798.605 513.5 797.5H511.5H509.5ZM513.5 838.5C513.5 837.395 512.605 836.5 511.5 836.5C510.395 836.5 509.5 837.395 509.5 838.5H511.5H513.5ZM498.919 1146.91C499.7 1147.7 500.967 1147.7 501.748 1146.91L514.475 1134.19C515.257 1133.41 515.257 1132.14 514.475 1131.36C513.694 1130.58 512.428 1130.58 511.647 1131.36L500.333 1142.67L489.02 1131.36C488.239 1130.58 486.972 1130.58 486.191 1131.36C485.41 1132.14 485.41 1133.41 486.191 1134.19L498.919 1146.91ZM359.5 522H357.5V538H359.5H361.5V522H359.5ZM383.5 562V564H487.5V562V560H383.5V562ZM511.5 586H509.5V797.5H511.5H513.5V586H511.5ZM511.5 838.5H509.5V1068.42H511.5H513.5V838.5H511.5ZM500.333 1079.58H498.333V1145.5H500.333H502.333V1079.58H500.333ZM511.5 1068.42H509.5C509.5 1070.4 507.896 1072 505.917 1072V1074V1076C510.105 1076 513.5 1072.6 513.5 1068.42H511.5ZM487.5 562V564C499.65 564 509.5 573.85 509.5 586H511.5H513.5C513.5 571.641 501.859 560 487.5 560V562ZM505.917 1074V1072C501.729 1072 498.333 1075.4 498.333 1079.58H500.333H502.333C502.333 1077.6 503.938 1076 505.917 1076V1074ZM359.5 538H357.5C357.5 552.359 369.141 564 383.5 564V562V560C371.35 560 361.5 550.15 361.5 538H359.5Z" fill="#757575"/>
-<g id="Text Background_4">
-<text id="Text_9" fill="black" fill-opacity="0.8" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="425.828" y="823.818">Manages and monitors</tspan></text>
-</g>
-</g>
-<g id="Replication">
-<path id="Shape_10" d="M226.833 989.5C226.833 990.605 227.729 991.5 228.833 991.5C229.938 991.5 230.833 990.605 230.833 989.5H228.833H226.833ZM230.833 1030.5C230.833 1029.4 229.938 1028.5 228.833 1028.5C227.729 1028.5 226.833 1029.4 226.833 1030.5H228.833H230.833ZM178.919 1146.91C179.7 1147.7 180.966 1147.7 181.748 1146.91L194.475 1134.19C195.256 1133.41 195.256 1132.14 194.475 1131.36C193.694 1130.58 192.428 1130.58 191.647 1131.36L180.333 1142.67L169.02 1131.36C168.239 1130.58 166.972 1130.58 166.191 1131.36C165.41 1132.14 165.41 1133.41 166.191 1134.19L178.919 1146.91ZM266.167 906H264.167V927.333H266.167H268.167V906H266.167ZM228.833 964.667H226.833V989.5H228.833H230.833V964.667H228.833ZM228.833 1030.5H226.833V1050H228.833H230.833V1030.5H228.833ZM204.833 1074V1072H204.333V1074V1076H204.833V1074ZM180.333 1098H178.333V1145.5H180.333H182.333V1098H180.333ZM228.833 1050H226.833C226.833 1062.15 216.984 1072 204.833 1072V1074V1076C219.193 1076 230.833 1064.36 230.833 1050H228.833ZM247.5 946V944C236.086 944 226.833 953.253 226.833 964.667H228.833H230.833C230.833 955.462 238.295 948 247.5 948V946ZM204.333 1074V1072C189.974 1072 178.333 1083.64 178.333 1098H180.333H182.333C182.333 1085.85 192.183 1076 204.333 1076V1074ZM266.167 927.333H264.167C264.167 936.538 256.705 944 247.5 944V946V948C258.914 948 268.167 938.747 268.167 927.333H266.167Z" fill="#757575"/>
-<g id="Text Background_5">
-<text id="Text_10" fill="black" fill-opacity="0.8" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="187.331" y="1015.82">Replication</tspan></text>
-</g>
-</g>
-<g id="Replication_2">
-<path id="Shape_11" d="M375.667 989.5C375.667 990.605 376.562 991.5 377.667 991.5C378.771 991.5 379.667 990.605 379.667 989.5H377.667H375.667ZM379.667 1030.5C379.667 1029.4 378.771 1028.5 377.667 1028.5C376.562 1028.5 375.667 1029.4 375.667 1030.5H377.667H379.667ZM424.252 1146.91C425.034 1147.7 426.3 1147.7 427.081 1146.91L439.809 1134.19C440.59 1133.41 440.59 1132.14 439.809 1131.36C439.028 1130.58 437.761 1130.58 436.98 1131.36L425.667 1142.67L414.353 1131.36C413.572 1130.58 412.306 1130.58 411.525 1131.36C410.743 1132.14 410.743 1133.41 411.525 1134.19L424.252 1146.91ZM340.833 906H338.833V927.583H340.833H342.833V906H340.833ZM377.667 964.417H375.667V989.5H377.667H379.667V964.417H377.667ZM377.667 1030.5H375.667V1050H377.667H379.667V1030.5H377.667ZM425.667 1098H423.667V1145.5H425.667H427.667V1098H425.667ZM377.667 1050H375.667C375.667 1064.36 387.307 1076 401.667 1076V1074V1072C389.516 1072 379.667 1062.15 379.667 1050H377.667ZM359.25 946V948C368.317 948 375.667 955.35 375.667 964.417H377.667H379.667C379.667 953.141 370.526 944 359.25 944V946ZM401.667 1074V1076C413.817 1076 423.667 1085.85 423.667 1098H425.667H427.667C427.667 1083.64 416.026 1072 401.667 1072V1074ZM340.833 927.583H338.833C338.833 938.859 347.974 948 359.25 948V946V944C350.183 944 342.833 936.65 342.833 927.583H340.833Z" fill="#757575"/>
-<g id="Text Background_6">
-<text id="Text_11" fill="black" fill-opacity="0.8" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="16" font-weight="500" letter-spacing="-0.011em"><tspan x="336.164" y="1015.82">Replication</tspan></text>
-</g>
+<text id="Secondary 2" fill="#0F172A" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" font-weight="600" letter-spacing="0em"><tspan x="1096" y="581.273">Secondary 2</tspan></text>
+<text id="mongod &#194;&#183; Member 3" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="14" letter-spacing="0em"><tspan x="1096" y="606.591">mongod &#xb7; Member 3</tspan></text>
+<rect id="Rectangle_28" x="1096" y="626" width="132" height="30" rx="15" fill="#ECFDF5"/>
+<text id="REPLICA MEMBER_2" fill="#059669" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="1105.35" y="642.727">REPLICA MEMBER</tspan></text>
+<text id="Oplog replication" fill="#047857" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" font-weight="500" letter-spacing="0em"><tspan x="667.067" y="736.727">Oplog replication</tspan></text>
+<text id="Management traffic" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" letter-spacing="0em"><tspan x="154" y="780.727">Management traffic</tspan></text>
+<text id="Replication flow" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" letter-spacing="0em"><tspan x="398" y="780.727">Replication flow</tspan></text>
+<text id="Generic topology &#226;&#128;&#148; no environment-specific identifiers" fill="#64748B" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="13" letter-spacing="0em"><tspan x="980.794" y="780.727">Generic topology &#x2014; no environment-specific identifiers</tspan></text>
+<g id="Architecture connectors">
+<path id="Vector_10" d="M350 243H454" stroke="#2563EB" stroke-width="2"/>
+<path id="Vector_11" d="M454 237L466 243L454 249V237Z" fill="#2563EB"/>
+<path id="Vector_12" d="M862 306V492M862 492H280V532M862 492H1160V532M720 492V532" stroke="#2563EB" stroke-width="2" stroke-dasharray="7 7"/>
+<path id="Vector_13" d="M280 497C282.761 497 285 494.761 285 492C285 489.239 282.761 487 280 487C277.239 487 275 489.239 275 492C275 494.761 277.239 497 280 497Z" fill="#2563EB"/>
+<path id="Vector_14" d="M720 497C722.761 497 725 494.761 725 492C725 489.239 722.761 487 720 487C717.239 487 715 489.239 715 492C715 494.761 717.239 497 720 497Z" fill="#2563EB"/>
+<path id="Vector_15" d="M1160 497C1162.76 497 1165 494.761 1165 492C1165 489.239 1162.76 487 1160 487C1157.24 487 1155 489.239 1155 492C1155 494.761 1157.24 497 1160 497Z" fill="#2563EB"/>
+<path id="Vector_16" d="M560 748H442" stroke="#059669" stroke-width="3"/>
+<path id="Vector_17" d="M442 742L430 748L442 754V742Z" fill="#059669"/>
+<path id="Vector_18" d="M880 748H998" stroke="#059669" stroke-width="3"/>
+<path id="Vector_19" d="M998 742L1010 748L998 754V742Z" fill="#059669"/>
 </g>
 </g>
 </svg>
