@@ -24,9 +24,16 @@ Files:
 4. Right-click the graphic and select **Convert to Shape**.
 5. Ungroup or select individual shapes to edit labels, colors, and layout.
 
+## WSL Database Engineering Workspace
+
+Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterprise operations repositories:
+
+- [Setup instructions](wsl-db-workspace/README.md)
+- [Workspace creation script](wsl-db-workspace/create-workspace.sh)
+
 ## Sanitization
 
-All diagrams in this repository must use generic labels. Do not include:
+All diagrams and scripts in this repository must use generic labels. Do not include:
 
 - Organization, customer, project, or application names
 - Usernames or email addresses
@@ -37,4 +44,4 @@ All diagrams in this repository must use generic labels. Do not include:
 
 ## Disclaimer
 
-These diagrams are generic examples and are not production deployment specifications.
+These diagrams and scripts are generic examples and are not production deployment specifications.
