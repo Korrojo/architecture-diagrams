@@ -13,10 +13,19 @@ It also creates local working directories outside the repositories:
 - `~/work/data`
 - `~/work/logs`
 
-## Download and run in WSL
+## Copy and run in WSL
+
+1. Open [`create-workspace.sh`](create-workspace.sh) on GitHub.
+2. Copy its complete contents.
+3. In WSL, create a file and paste the copied contents:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Korrojo/architecture-diagrams/main/wsl-db-workspace/create-workspace.sh
+nano create-workspace.sh
+```
+
+4. Save the file, then run:
+
+```bash
 chmod +x create-workspace.sh
 ./create-workspace.sh
 ```
