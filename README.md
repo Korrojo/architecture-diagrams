@@ -35,6 +35,7 @@ Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterp
 
 ## MongoDB Operations
 
+- [MongoDB Enterprise operational improvement plan](mongodb-operations/operational-improvement-plan.md)
 - [Controlled manual emergency changes and reconciliation](mongodb-operations/emergency-change-reconciliation.md)
 
 ## Sanitization
