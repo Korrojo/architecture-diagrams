@@ -33,6 +33,10 @@ Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterp
 - [APT and pip network guide](wsl-db-workspace/APT_AND_PIP.md)
 - [MongoDB user and role inventory script](wsl-db-workspace/export_users_roles.py)
 
+## MongoDB Operations
+
+- [Controlled manual emergency changes and reconciliation](mongodb-operations/emergency-change-reconciliation.md)
+
 ## Sanitization
 
 All diagrams and scripts in this repository must use generic labels. Do not include:
