@@ -82,6 +82,23 @@
 | CPU-sensitive workload features |  |  |  |
 | Proposed vCPU per node |  |  |  |
 
+## AWS EC2 Candidate Evaluation
+
+| EC2 candidate | vCPU | RAM GiB | Baseline/max network | Baseline/max EBS IOPS | Baseline/max EBS throughput | Sustained fit | Burst fit | Approved/available | Decision |
+|---|---:|---:|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |  |  |  |
+
+Record the AWS documentation retrieval date and verify region, architecture, operating-system, MongoDB Enterprise, Ops Manager, monitoring, security-agent, and backup-agent compatibility.
+
+## AWS EBS Candidate Evaluation
+
+| EBS candidate | Size GiB | Provisioned IOPS | Provisioned throughput MiB/s | Expected latency | Capacity fit | IOPS fit | Throughput fit | EC2 limit fit | Decision |
+|---|---:|---:|---:|---|---|---|---|---|---|
+| gp3 |  |  |  |  |  |  |  |  |  |
+| io2 Block Express |  |  |  |  |  |  |  |  |  |
+
+Effective performance is the lower of the provisioned EBS performance and the selected EC2 instance's EBS limit.
+
 ## Storage Performance Assessment
 
 | Metric | Normal | Sustained peak | Burst | Proposed capacity | Validation evidence |
