@@ -27,7 +27,110 @@ Do not present a heuristic or estimate as a MongoDB product requirement.
 5. Aggregate workloads that will share the same replica set or sharded cluster.
 6. Keep production, nonproduction, analytics, migration, and batch workloads distinct until architecture decisions are made.
 
-## 2. Data and Storage Projection
+## 2. AWS Sizing Exercise
+
+The application questionnaire supplies workload demand. The DBA completes the AWS exercise with measurements, platform standards, and current AWS specifications.
+
+### Step 1: Establish the target design point
+
+Select the projection year and workload condition to size for. Normally this is the sustained peak at the approved planning horizon, not a short-lived maximum with no expected recurrence.
+
+Record:
+
+- Target projection year
+- Normal, sustained-peak, and burst workload
+- Peak duration
+- Required unused capacity or safety factor
+- Standard or exception RTO/RPO tier
+- Replica-set member count and AZ/region placement
+
+RTO and RPO affect topology, DR, restore performance, backup/PITR, and oplog requirements. They do not directly determine CPU or RAM for one data-bearing node.
+
+### Step 2: Calculate storage capacity per node
+
+For each target year, calculate:
+
+```text
+Required disk per node =
+  (Stored collection data
+   + Indexes
+   + Oplog
+   + Operational reserve)
+  / (1 - Unused headroom percentage)
+```
+
+Capacity must be sufficient for a single data-bearing member. Multiply by the number of data-bearing members only for total infrastructure and cost estimates.
+
+### Step 3: Determine RAM demand
+
+Estimate hot collection data and hot index pages. Use the workbook's host-RAM result only as a planning floor. Validate it with representative load tests and WiredTiger cache metrics.
+
+### Step 4: Determine CPU demand
+
+Use a representative test configuration:
+
+```text
+Required vCPU = Tested vCPU × Observed peak CPU utilization / Target CPU utilization
+```
+
+Round upward and apply architecture standards. This calculation is valid only when the test dataset, indexes, concurrency, and queries represent the target workload.
+
+### Step 5: Determine IOPS and throughput demand
+
+Measure read and write IOPS and MiB/s during sustained peak, checkpoint, batch, migration, initial sync, and restore scenarios.
+
+```text
+Required IOPS = (Peak read IOPS + Peak write IOPS) × IOPS safety factor
+
+Required throughput =
+  (Peak read MiB/s + Peak write MiB/s) × Throughput safety factor
+```
+
+Evaluate IOPS and throughput separately. Either limit can become the bottleneck depending on I/O size.
+
+### Step 6: Evaluate EBS candidates
+
+For each approved EBS candidate, verify all of the following:
+
+- Volume capacity is at least the required per-node disk capacity
+- Provisioned IOPS meet required IOPS
+- Provisioned throughput meets required throughput
+- Requested IOPS and throughput are within the volume type's limits and ratios
+- Expected latency is acceptable for the tested workload
+- Selected EC2 instance can deliver the volume's provisioned performance
+
+Current AWS documentation lists gp3 and io2 Block Express specifications. Treat workbook reference values as dated data and verify them against AWS documentation before approval.
+
+### Step 7: Evaluate EC2 candidates
+
+Start with organization-approved memory-optimized instances unless testing supports another family. For every candidate compare:
+
+- vCPU against calculated CPU demand
+- RAM against working-set and process-memory demand
+- Baseline EBS IOPS and throughput against sustained requirements
+- Maximum EBS IOPS and throughput against burst requirements
+- Baseline and maximum network bandwidth against database, replication, backup, and monitoring traffic
+- Processor architecture compatibility with MongoDB Enterprise, Ops Manager automation, security agents, backup agents, and application drivers
+
+For instances with baseline/burst performance, use baseline values for sustained demand unless the peak duration and credit behavior have been explicitly validated.
+
+### Step 8: Apply the lower-limit rule
+
+Effective storage performance is bounded by the smaller of the EBS configuration and EC2 EBS limit:
+
+```text
+Effective IOPS = MIN(Provisioned volume IOPS, EC2 EBS IOPS limit)
+
+Effective throughput = MIN(Provisioned volume throughput, EC2 EBS throughput limit)
+```
+
+An EBS volume can therefore be correctly provisioned but still be throttled by the EC2 instance.
+
+### Step 9: Validate the complete candidate
+
+Test the selected EC2 and EBS combination with the proposed schema, indexes, data distribution, encryption, agents, and workload. Include node failure, initial sync, backup, and restore scenarios when they are part of platform qualification.
+
+## 3. Data and Storage Projection
 
 Project logical data at launch and at one, three, and five years. Use application-supplied projections when available. Otherwise, document the growth model explicitly.
 
@@ -62,7 +165,7 @@ Per-node storage must consider:
 
 Do not multiply per-node disk capacity by replica-set member count when selecting the capacity of one node. Multiplication is used only for total infrastructure and cost estimates.
 
-## 3. Working Set and Memory
+## 4. Working Set and Memory
 
 The working set is the portion of data and indexes accessed frequently enough to benefit from memory. Estimate it from query time ranges, hot collections, hot tenants, frequently used indexes, and observed cache behavior.
 
@@ -85,7 +188,7 @@ Memory sizing must also reserve capacity for:
 
 Validate the estimate with representative reads and writes while observing cache eviction, page faults, latency, and disk activity.
 
-## 4. CPU
+## 5. CPU
 
 Do not derive final CPU solely from data volume or a fixed CPU-to-RAM ratio. CPU demand depends on concurrency, query efficiency, compression, encryption, aggregation, index maintenance, transactions, and background work.
 
@@ -101,7 +204,7 @@ Use the questionnaire to identify CPU-sensitive features:
 
 MongoDB production notes recommend at least two real cores or one multi-core physical CPU per `mongod` or `mongos`, but production core count must be validated against the workload.
 
-## 5. Storage IOPS, Throughput, and Latency
+## 6. Storage IOPS, Throughput, and Latency
 
 Capacity and performance are separate decisions. Evaluate:
 
@@ -116,7 +219,7 @@ Capacity and performance are separate decisions. Evaluate:
 
 Use a representative workload to measure IOPS and throughput. Provider rules of thumb may be used only as documented heuristics. For AWS, verify current gp3 or io2 limits and the selected EC2 instance's EBS bandwidth before recommending a configuration.
 
-## 6. Network
+## 7. Network
 
 Estimate traffic among applications, drivers, replica-set members, shards, backup services, and monitoring systems. Consider:
 
@@ -129,7 +232,7 @@ Estimate traffic among applications, drivers, replica-set members, shards, backu
 
 Network compression assumptions must be measured with the selected driver and payloads.
 
-## 7. Oplog
+## 8. Oplog
 
 Size the oplog from the measured or tested oplog generation rate and the required recovery window:
 
@@ -139,7 +242,7 @@ Required oplog capacity = Peak oplog generation per hour × Required oplog windo
 
 The required window must cover anticipated replication interruptions, change-stream consumer outages, maintenance, and migration CDC requirements. Measure oplog growth because update patterns and document structure can make it differ materially from business-data growth.
 
-## 8. Replica Set, Availability, and Recovery
+## 9. Replica Set, Availability, and Recovery
 
 Translate application RTO, RPO, maintenance, and regional requirements into topology decisions. Document:
 
@@ -153,7 +256,7 @@ Translate application RTO, RPO, maintenance, and regional requirements into topo
 
 Application teams provide service requirements; the DBA and architect select the topology.
 
-## 9. Sharding Assessment
+## 10. Sharding Assessment
 
 Do not recommend sharding only because the projected dataset is large. Evaluate whether a replica set can meet storage, throughput, maintenance, and growth requirements.
 
@@ -168,7 +271,7 @@ If sharding may be required, assess candidate shard keys using:
 
 MongoDB provides `analyzeShardKey` for data-driven assessment using sampled queries. Record both the proposed key and the supporting workload evidence.
 
-## 10. Index Assessment
+## 11. Index Assessment
 
 Build the index plan from common query shapes, not from fields viewed in isolation. Review:
 
@@ -184,7 +287,7 @@ Build the index plan from common query shapes, not from fields viewed in isolati
 
 MongoDB recommends identifying common queries, creating supporting indexes, measuring index use, and periodically removing unnecessary indexes. The ESR guideline is a starting point for compound-index order, subject to query selectivity and testing.
 
-## 11. Validation and Right-Sizing
+## 12. Validation and Right-Sizing
 
 Before production approval:
 
@@ -215,6 +318,10 @@ Repeat right-sizing after production metrics represent a normal business cycle.
 - Choose a shard key: https://www.mongodb.com/docs/manual/core/sharding-choose-a-shard-key/
 - MongoDB limits: https://www.mongodb.com/docs/manual/reference/limits/
 - Amazon EBS volume types: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
+- Amazon EC2 memory-optimized instance specifications: https://docs.aws.amazon.com/ec2/latest/instancetypes/mo.html
+- Amazon EC2 EBS-optimized instance tables: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html
+- Amazon EBS gp3 specifications: https://docs.aws.amazon.com/ebs/latest/userguide/general-purpose.html
+- Amazon EBS io2 Block Express specifications: https://docs.aws.amazon.com/ebs/latest/userguide/provisioned-iops.html
 
 ### Secondary source reviewed
 
