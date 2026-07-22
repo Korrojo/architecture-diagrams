@@ -1,0 +1,333 @@
+# MongoDB Collection Inventory and Cleanup Candidate Report
+
+## Purpose
+
+This read-only Python utility inventories collections across a self-managed MongoDB deployment and produces CSV reports for preliminary database-cleanup analysis. It highlights names that resemble backups, copies, temporary collections, archives, restores, snapshots, or date-stamped duplicates.
+
+The report provides evidence for review. The script never drops, renames, updates, inserts, or deletes anything. A candidate score is not approval to delete a collection.
+
+## Package contents
+
+| File | Purpose |
+| --- | --- |
+| `collection_inventory.py` | Main command-line inventory and analysis program. |
+| `cleanup_patterns.json` | Configurable naming rules, comparison tolerance, and scoring weights. |
+| `requirements.txt` | Runtime Python dependencies. |
+| `tests/test_collection_inventory.py` | Unit tests for validation, matching, inference, comparison, and scoring. |
+
+## Existing workspace conventions
+
+The utility follows the same environment and cluster conventions as `wsl-db-workspace/export_users_roles.py`.
+
+Credential file selected by `--environment` and `--cluster`:
+
+```text
+~/.config/work/mongodb/<ENVIRONMENT>/<CLUSTER>.env
+```
+
+CSV output:
+
+```text
+~/work/data/mongodb/<ENVIRONMENT>/<CLUSTER>/
+```
+
+Log output:
+
+```text
+~/work/logs/mongodb/<ENVIRONMENT>/<CLUSTER>/
+```
+
+The output and log directories are created automatically. Credentials, reports, and logs remain outside Git.
+
+## Recommended location in the operations repository
+
+Copy this complete directory to:
+
+```text
+~/work/repos/mongodb-enterprise-ops/scripts/diagnostics/collection_inventory/
+```
+
+## Requirements
+
+- Python 3.10 or later.
+- MongoDB 6.2 or later is recommended because the script uses `$collStats`.
+- Network connectivity from WSL to MongoDB.
+- Permission to list visible databases and collections, run collection statistics, and query collection `_id` values.
+- Optional read access to `local.oplog.rs` only when using `--check-oplog`.
+
+## Installation
+
+From the MongoDB operations repository:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install \
+  -r scripts/diagnostics/collection_inventory/requirements.txt
+```
+
+On a managed network, use only the organization's approved proxy, certificate, or internal package mirror. The existing `wsl-db-workspace/APT_AND_PIP.md` contains the established WSL guidance.
+
+## Environment file
+
+Create the cluster file outside Git:
+
+```text
+~/.config/work/mongodb/DEV/example-cluster.env
+```
+
+Example:
+
+```bash
+MONGODB_URI='mongodb://username:password@host1,host2,host3/?authSource=admin&replicaSet=exampleReplicaSet'
+```
+
+Secure it:
+
+```bash
+chmod 600 ~/.config/work/mongodb/DEV/example-cluster.env
+```
+
+The URI is never written to a report or log. Use the organization's approved authentication and secrets-management method where available.
+
+## Basic use
+
+Inventory every non-system database visible to the account:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment DEV \
+  --cluster example-cluster
+```
+
+The default run excludes `admin`, `config`, and `local` and writes:
+
+```text
+collection_inventory_<UTC timestamp>.csv
+cleanup_candidates_<UTC timestamp>.csv
+```
+
+Both CSV files are created with permission mode `600`.
+
+## Filtering and diagnostic options
+
+Inventory one database:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment SAT \
+  --cluster example-cluster \
+  --database application_database
+```
+
+Repeat `--database` for several databases:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment SAT \
+  --cluster example-cluster \
+  --database application_one \
+  --database application_two
+```
+
+Limit collection names using a regular expression:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment PROD \
+  --cluster example-cluster \
+  --collection-regex '(?i)(backup|bak|bkp|copy|clone|temp|tmp|archive|old)'
+```
+
+Write only the candidate report:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment PROD \
+  --cluster example-cluster \
+  --candidates-only
+```
+
+Attempt exact creation dates from retained oplog entries:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment PROD \
+  --cluster example-cluster \
+  --check-oplog
+```
+
+Include system databases explicitly:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment DEV \
+  --cluster example-cluster \
+  --include-system-databases
+```
+
+Skip earliest/latest ObjectId lookups for the fastest metadata-only run:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment DEV \
+  --cluster example-cluster \
+  --skip-document-dates
+```
+
+Other controls:
+
+```text
+--patterns-file PATH       Use an approved custom JSON rules file.
+--recent-days NUMBER       Recent-collection scoring window; default 90.
+--score-threshold NUMBER   Candidate CSV minimum score; default 3.
+--max-time-ms NUMBER       Each ObjectId boundary query limit; default 15000.
+--log-level LEVEL          DEBUG, INFO, WARNING, or ERROR.
+```
+
+Display the complete CLI help:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py --help
+```
+
+## CSV fields
+
+### Identity and topology
+
+| Columns | Meaning |
+| --- | --- |
+| `environment`, `cluster` | Values supplied on the command line. |
+| `database`, `collection`, `namespace` | MongoDB object identity. |
+| `collection_type` | Collection, view, time-series, or other server-reported type. |
+| `collection_uuid` | UUID returned by `listCollections`, when available. |
+| `server_hosts` | Nodes or shards returning collection statistics. |
+| `sharded`, `capped` | Server-reported collection characteristics. |
+
+### Volume and storage
+
+| Columns | Meaning |
+| --- | --- |
+| `document_count` | Metadata-based document count returned by `$collStats`. |
+| `logical_data_size_bytes`, `logical_data_size_gib` | Logical document data before storage-engine compression. |
+| `storage_size_bytes`, `storage_size_gib` | Allocated collection storage. |
+| `free_storage_size_bytes`, `free_storage_percent` | Reusable space within allocated storage. |
+| `average_document_size_bytes` | Average logical BSON document size. |
+| `index_count` | Number of unique index names. |
+| `index_size_bytes`, `index_size_gib` | Total allocated index storage. |
+| `total_size_bytes`, `total_size_gib` | Collection storage plus index storage. |
+| `index_sizes_json` | Per-index sizes serialized into one CSV cell. |
+
+Byte columns are authoritative. GiB values are rounded to six decimal places.
+
+### Date evidence
+
+| Column | Meaning |
+| --- | --- |
+| `oldest_objectid_date_utc` | Generation time in the smallest surviving ObjectId. |
+| `newest_objectid_date_utc` | Generation time in the largest surviving ObjectId. |
+| `oplog_created_at_utc` | Exact retained collection-create event, when accessible. |
+| `oplog_last_renamed_at_utc` | Latest retained rename into this namespace; not necessarily creation time. |
+| `creation_date_utc` | Oplog create time when available; otherwise oldest ObjectId estimate. |
+| `creation_date_source` | `oplog_create_event`, `earliest_objectid`, or blank. |
+| `creation_date_confidence` | `high`, `low`, or blank. |
+
+MongoDB does not normally expose a durable collection creation timestamp. An ObjectId timestamp describes when the identifier was generated, not necessarily when its collection was created or its document inserted. Restores, copies, deletions, custom `_id` values, and pre-generated ObjectIds can make the estimate inaccurate. Oplog events are available only while retained and only to authorized accounts.
+
+### Candidate analysis
+
+| Column | Meaning |
+| --- | --- |
+| `matches_cleanup_pattern` | Whether a configured naming rule matched. |
+| `matched_patterns` | Comma-separated matching rule names. |
+| `suspected_source_collection` | Candidate name after configured markers are removed. |
+| `source_collection_exists` | Whether the inferred source exists in the same selected database. |
+| `document_count_matches_source` | Exact count comparison when both statistics succeeded. |
+| `size_approximately_matches_source` | Logical-size comparison using configured tolerance. |
+| `candidate_score` | Evidence-weight sum for review prioritization. |
+| `inventory_timestamp_utc` | UTC report collection time. |
+| `error` | Per-collection failures; partial metadata remains in the row. |
+
+## Default rules and scoring
+
+Patterns are separator-aware and case-insensitive. `orders_temp` matches; `document_template` does not.
+
+| Evidence | Weight |
+| --- | ---: |
+| `_backup`, `-bak`, `.bkp` marker | 3 |
+| `_copy` or `-clone` marker | 3 |
+| `_temp` or `-tmp` marker | 3 |
+| `_archive`, `_old`, `_restore`, or `_snapshot` marker | 3 |
+| Date suffix such as `_20260701`, `-2026-07-01`, or `.2026.07.01` | 2 |
+| Inferred source collection exists | 2 |
+| Document count equals source | 1 |
+| Logical size is within 10% of source | 1 |
+| Matched collection appears created within `--recent-days` | 1 |
+
+The default candidate threshold is `3`. A date suffix alone therefore remains in the full inventory but is not a candidate unless supported by additional evidence.
+
+## Custom rules
+
+Edit a controlled copy of `cleanup_patterns.json`, then supply it:
+
+```bash
+python scripts/diagnostics/collection_inventory/collection_inventory.py \
+  --environment DEV \
+  --cluster example-cluster \
+  --patterns-file /approved/path/cleanup_patterns.json
+```
+
+Each rule requires `name`, a Python-compatible regular-expression `expression`, and an integer `weight`. Test additions against legitimate collection names to limit false positives.
+
+## Processing and performance
+
+- `list_database_names()` discovers databases visible to the account.
+- `list_collections()` retrieves names, types, options, and UUIDs.
+- `$collStats` retrieves counts and storage measurements without scanning all documents.
+- Earliest/latest ObjectId queries use the `_id` index and a configurable time limit.
+- Oplog DDL entries are read once and only with `--check-oplog`.
+- Views are listed but do not receive storage-statistics requests.
+- Failures are captured per collection so the remaining inventory continues.
+- WiredTiger diagnostic internals, document bodies, credentials, and URIs are excluded.
+
+On a sharded cluster, `$collStats` can return one result per shard. The script sums byte and count measurements, combines index sizes by name, and marks the row as sharded.
+
+When `--collection-regex` is used, inferred-source comparison is limited to collections included by that filter. Run the full inventory for the strongest comparison results.
+
+## Review procedure
+
+1. Preserve the full inventory CSV as the baseline.
+2. Review candidates in descending `candidate_score` order.
+3. Compare candidate and suspected-source names, counts, sizes, indexes, ownership, and application dependencies.
+4. Confirm retention, legal hold, backup, restore, and change-management requirements.
+5. Obtain application-owner and DBA approval before any separate cleanup operation.
+
+This package intentionally contains no automated drop operation.
+
+## Testing
+
+After installing the requirements:
+
+```bash
+python -m unittest discover \
+  -s scripts/diagnostics/collection_inventory/tests \
+  -v
+```
+
+The tests do not connect to MongoDB.
+
+Syntax-only validation:
+
+```bash
+python -m py_compile \
+  scripts/diagnostics/collection_inventory/collection_inventory.py
+```
+
+## Security and sanitization
+
+- Keep `.env` files under `~/.config/work`, never under `~/work/repos`.
+- Keep generated CSV and logs under `~/work/data` and `~/work/logs`.
+- Generated inventories contain real database, collection, host, and index names; treat them as internal operational data.
+- Never publish generated reports, URIs, hostnames, usernames, certificates, or credentials.
+- This public package contains only generic names and values.
