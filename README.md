@@ -37,6 +37,7 @@ Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterp
 
 - [MongoDB Enterprise operational improvement plan](mongodb-operations/operational-improvement-plan.md)
 - [Controlled manual emergency changes and reconciliation](mongodb-operations/emergency-change-reconciliation.md)
+- [MongoDB collection inventory and cleanup-candidate reporting](mongodb-collection-inventory/README.md)
 
 ## MongoDB Cluster Sizing
 
