@@ -1,0 +1,36 @@
+{
+  "patterns": [
+    {
+      "name": "backup_marker",
+      "expression": "(?:^|[._-])(?:backup|bak|bkp)(?:[._-]|$)",
+      "weight": 3
+    },
+    {
+      "name": "copy_or_clone_marker",
+      "expression": "(?:^|[._-])(?:copy|clone)(?:[._-]|$)",
+      "weight": 3
+    },
+    {
+      "name": "temporary_marker",
+      "expression": "(?:^|[._-])(?:temp|tmp)(?:[._-]|$)",
+      "weight": 3
+    },
+    {
+      "name": "archive_or_old_marker",
+      "expression": "(?:^|[._-])(?:archive|old|restore|snapshot)(?:[._-]|$)",
+      "weight": 3
+    },
+    {
+      "name": "date_suffix",
+      "expression": "(?:[._-])20\\d{2}(?:[._-]?(?:0[1-9]|1[0-2]))(?:[._-]?(?:0[1-9]|[12]\\d|3[01]))$",
+      "weight": 2
+    }
+  ],
+  "scoring": {
+    "source_match_weight": 2,
+    "count_match_weight": 1,
+    "size_match_weight": 1,
+    "recent_weight": 1,
+    "size_tolerance_percent": 10.0
+  }
+}
