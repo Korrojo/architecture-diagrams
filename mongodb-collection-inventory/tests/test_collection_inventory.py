@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import logging
 import stat
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -106,6 +108,16 @@ class InventoryHelpersTest(unittest.TestCase):
     def test_removed_columns_are_not_exported(self) -> None:
         self.assertNotIn("inventory_timestamp_utc", inventory.CSV_COLUMNS)
         self.assertNotIn("index_sizes_json", inventory.CSV_COLUMNS)
+        self.assertNotIn("oplog_created_at_utc", inventory.CSV_COLUMNS)
+        self.assertNotIn("oplog_last_renamed_at_utc", inventory.CSV_COLUMNS)
+
+    def test_oplog_option_is_not_available(self) -> None:
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            inventory.parse_args([
+                "--environment", "DEV",
+                "--cluster", "example-cluster",
+                "--check-oplog",
+            ])
 
     def test_source_name_is_inferred(self) -> None:
         source = inventory.find_source_collection(
