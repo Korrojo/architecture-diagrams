@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 from bson import ObjectId
-from bson.timestamp import Timestamp
 from dotenv import load_dotenv
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.collection import Collection
@@ -44,8 +43,7 @@ CSV_COLUMNS = (
     "free_storage_percent", "average_document_size_bytes", "index_count",
     "index_size_bytes", "index_size_gib", "total_size_bytes", "total_size_gib",
     "oldest_objectid_date_utc", "newest_objectid_date_utc",
-    "oplog_created_at_utc", "oplog_last_renamed_at_utc", "creation_date_utc",
-    "creation_date_source", "creation_date_confidence",
+    "creation_date_utc", "creation_date_source", "creation_date_confidence",
     "matches_cleanup_pattern", "matched_patterns", "suspected_source_collection",
     "source_collection_exists", "document_count_matches_source",
     "size_approximately_matches_source", "candidate_score",
@@ -78,14 +76,6 @@ class CleanupConfig:
     size_match_weight: int = 1
     recent_weight: int = 1
     size_tolerance_percent: float = 10.0
-
-
-@dataclass(frozen=True)
-class OplogEvent:
-    """Retained collection DDL timestamps found in the replica-set oplog."""
-
-    created_at: datetime | None = None
-    renamed_at: datetime | None = None
 
 
 class UTCFormatter(logging.Formatter):
@@ -141,10 +131,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--candidates-only", action="store_true",
         help="Write only cleanup_candidates CSV.",
-    )
-    parser.add_argument(
-        "--check-oplog", action="store_true",
-        help="Use retained create/rename oplog entries when authorized.",
     )
     parser.add_argument(
         "--skip-document-dates", action="store_true",
@@ -346,34 +332,6 @@ def objectid_boundary_dates(
     return objectid_time(oldest), objectid_time(newest)
 
 
-def timestamp_time(value: Any) -> datetime | None:
-    """Convert a BSON oplog timestamp to an aware UTC datetime."""
-
-    return value.as_datetime().replace(tzinfo=UTC) if isinstance(value, Timestamp) else None
-
-
-def load_oplog_events(client: MongoClient[Any]) -> dict[str, OplogEvent]:
-    """Read retained create/rename DDL events once; requires optional oplog access."""
-
-    query = {"op": "c", "$or": [
-        {"o.create": {"$exists": True}},
-        {"o.renameCollection": {"$exists": True}},
-    ]}
-    mutable: dict[str, dict[str, datetime | None]] = defaultdict(
-        lambda: {"created_at": None, "renamed_at": None}
-    )
-    cursor = client.local["oplog.rs"].find(query, {"ts": 1, "ns": 1, "o": 1})
-    for entry in cursor.sort("$natural", 1):
-        command = entry.get("o", {})
-        event_time = timestamp_time(entry.get("ts"))
-        database = str(entry.get("ns", "")).removesuffix(".$cmd")
-        if event_time and database and command.get("create"):
-            mutable[f"{database}.{command['create']}"]["created_at"] = event_time
-        if event_time and command.get("renameCollection") and command.get("to"):
-            mutable[str(command["to"])]["renamed_at"] = event_time
-    return {name: OplogEvent(**values) for name, values in mutable.items()}
-
-
 def match_patterns(name: str, patterns: Iterable[CleanupPattern]) -> list[CleanupPattern]:
     """Return every configured rule matching a collection name."""
 
@@ -499,7 +457,7 @@ def empty_row(
 
 def inventory_collection(
     database: Database[Any], info: Mapping[str, Any], environment: str, cluster: str,
-    oplog_event: OplogEvent, skip_document_dates: bool, max_time_ms: int,
+    skip_document_dates: bool, max_time_ms: int,
 ) -> dict[str, Any]:
     """Collect one row and preserve partial results when one operation fails."""
 
@@ -541,17 +499,13 @@ def inventory_collection(
         except PyMongoError as exc:
             errors.append(f"document_dates: {type(exc).__name__}: {exc}")
 
-    # Oplog create time is exact while retained; ObjectId time is only an estimate.
-    creation_date = oplog_event.created_at or oldest
-    source = "oplog_create_event" if oplog_event.created_at else ""
-    confidence = "high" if oplog_event.created_at else ""
-    if not source and oldest:
-        source, confidence = "earliest_objectid", "low"
+    # The oldest surviving ObjectId is an estimate, not a collection creation time.
+    creation_date = oldest
+    source = "earliest_objectid" if oldest else ""
+    confidence = "low" if oldest else ""
     row.update({
         "oldest_objectid_date_utc": utc_text(oldest),
         "newest_objectid_date_utc": utc_text(newest),
-        "oplog_created_at_utc": utc_text(oplog_event.created_at),
-        "oplog_last_renamed_at_utc": utc_text(oplog_event.renamed_at),
         "creation_date_utc": utc_text(creation_date),
         "creation_date_source": source, "creation_date_confidence": confidence,
         "_creation_datetime": creation_date, "error": " | ".join(errors),
@@ -604,14 +558,6 @@ def run(args: argparse.Namespace) -> tuple[Path | None, Path, Path, int, int]:
         serverSelectionTimeoutMS=15_000, connectTimeoutMS=15_000,
     ) as client:
         client.admin.command("ping")
-        oplog_events: dict[str, OplogEvent] = {}
-        if args.check_oplog:
-            try:
-                oplog_events = load_oplog_events(client)
-                logging.info("Loaded retained oplog DDL for %d namespaces", len(oplog_events))
-            except PyMongoError as exc:
-                logging.warning("Oplog lookup unavailable: %s: %s", type(exc).__name__, exc)
-
         for database_name in selected_databases(client, args):
             database = client[database_name]
             logging.info("Inventorying database=%s", database_name)
@@ -620,10 +566,8 @@ def run(args: argparse.Namespace) -> tuple[Path | None, Path, Path, int, int]:
                 collection_name = str(info["name"])
                 if collection_filter and not collection_filter.search(collection_name):
                     continue
-                namespace = f"{database_name}.{collection_name}"
                 rows.append(inventory_collection(
                     database, info, environment, cluster,
-                    oplog_events.get(namespace, OplogEvent()),
                     args.skip_document_dates, args.max_time_ms,
                 ))
 
