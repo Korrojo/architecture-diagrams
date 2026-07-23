@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import logging
 import stat
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -106,6 +108,16 @@ class InventoryHelpersTest(unittest.TestCase):
     def test_removed_columns_are_not_exported(self) -> None:
         self.assertNotIn("inventory_timestamp_utc", inventory.CSV_COLUMNS)
         self.assertNotIn("index_sizes_json", inventory.CSV_COLUMNS)
+        self.assertNotIn("oplog_created_at_utc", inventory.CSV_COLUMNS)
+        self.assertNotIn("oplog_last_renamed_at_utc", inventory.CSV_COLUMNS)
+
+    def test_oplog_option_is_not_available(self) -> None:
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            inventory.parse_args([
+                "--environment", "DEV",
+                "--cluster", "example-cluster",
+                "--check-oplog",
+            ])
 
     def test_source_name_is_inferred(self) -> None:
         source = inventory.find_source_collection(
@@ -167,6 +179,52 @@ class InventoryHelpersTest(unittest.TestCase):
         self.assertTrue(candidate["document_count_matches_source"])
         self.assertTrue(candidate["size_approximately_matches_source"])
         self.assertEqual(candidate["candidate_score"], 10)
+
+    def test_candidate_storage_estimates_are_logged_by_database_and_total(self) -> None:
+        candidates = [
+            {
+                "database": "orders",
+                "total_size_bytes": 1_073_741_824,
+                "_statistics_available": True,
+            },
+            {
+                "database": "orders",
+                "total_size_bytes": 536_870_912,
+                "_statistics_available": True,
+            },
+            {
+                "database": "customers",
+                "total_size_bytes": 268_435_456,
+                "_statistics_available": True,
+            },
+            {
+                "database": "customers",
+                "total_size_bytes": 0,
+                "_statistics_available": False,
+            },
+        ]
+
+        with self.assertLogs(level="INFO") as captured:
+            inventory.log_candidate_storage_estimates(candidates)
+
+        self.assertEqual(
+            captured.output,
+            [
+                (
+                    "INFO:root:Estimated potential space freed "
+                    "database=customers bytes=268435456 gib=0.250000"
+                ),
+                (
+                    "INFO:root:Estimated potential space freed "
+                    "database=orders bytes=1610612736 gib=1.500000"
+                ),
+                (
+                    "INFO:root:Estimated potential space freed grand_total "
+                    "bytes=1879048192 gib=1.750000 candidates=4 "
+                    "statistics_unavailable=1"
+                ),
+            ],
+        )
 
 
 if __name__ == "__main__":

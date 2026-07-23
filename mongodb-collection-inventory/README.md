@@ -57,6 +57,20 @@ Example:
 2026-07-23T14:25:30.118Z INFO Starting inventory environment=PROD cluster=example-cluster
 ```
 
+The final log entries show estimated potential space freed for each database
+containing candidates, followed by a grand total:
+
+```text
+2026-07-23T14:26:12.441Z INFO Estimated potential space freed database=application_database bytes=1610612736 gib=1.500000
+2026-07-23T14:26:12.441Z INFO Estimated potential space freed grand_total bytes=1610612736 gib=1.500000 candidates=3 statistics_unavailable=0
+```
+
+The estimate sums `total_size_bytes`, which includes allocated collection and
+index storage. It excludes candidates whose collection statistics failed.
+`free_storage_size_bytes` is already part of allocated storage and is not added
+again. The estimate is intended for cleanup planning and does not guarantee the
+exact filesystem space returned after a collection is dropped.
+
 ## Recommended location in the operations repository
 
 Copy the executable and supporting files to:
@@ -77,7 +91,6 @@ Place the test in the repository's central test structure:
 - MongoDB 6.2 or later is recommended because the script uses `$collStats`.
 - Network connectivity from WSL to MongoDB.
 - Permission to list visible databases and collections, run collection statistics, and query collection `_id` values.
-- Optional read access to `local.oplog.rs` only when using `--check-oplog`.
 
 ## Installation
 
@@ -182,15 +195,6 @@ python scripts/collection-inventory/collection_inventory.py \
   --candidates-only
 ```
 
-Attempt exact creation dates from retained oplog entries:
-
-```bash
-python scripts/collection-inventory/collection_inventory.py \
-  --environment PROD \
-  --cluster example-cluster \
-  --check-oplog
-```
-
 Include system databases explicitly:
 
 ```bash
@@ -259,13 +263,11 @@ Byte columns are authoritative. GiB values are rounded to six decimal places.
 | --- | --- |
 | `oldest_objectid_date_utc` | Generation time in the smallest surviving ObjectId. |
 | `newest_objectid_date_utc` | Generation time in the largest surviving ObjectId. |
-| `oplog_created_at_utc` | Exact retained collection-create event, when accessible. |
-| `oplog_last_renamed_at_utc` | Latest retained rename into this namespace; not necessarily creation time. |
-| `creation_date_utc` | Oplog create time when available; otherwise oldest ObjectId estimate. |
-| `creation_date_source` | `oplog_create_event`, `earliest_objectid`, or blank. |
-| `creation_date_confidence` | `high`, `low`, or blank. |
+| `creation_date_utc` | Oldest surviving ObjectId timestamp estimate, when available. |
+| `creation_date_source` | `earliest_objectid` or blank. |
+| `creation_date_confidence` | `low` or blank. |
 
-MongoDB does not normally expose a durable collection creation timestamp. An ObjectId timestamp describes when the identifier was generated, not necessarily when its collection was created or its document inserted. Restores, copies, deletions, custom `_id` values, and pre-generated ObjectIds can make the estimate inaccurate. Oplog events are available only while retained and only to authorized accounts.
+MongoDB does not normally expose a durable collection creation timestamp. An ObjectId timestamp describes when the identifier was generated, not necessarily when its collection was created or its document inserted. Restores, copies, deletions, custom `_id` values, and pre-generated ObjectIds can make the estimate inaccurate. Collections without surviving ObjectId `_id` values have blank date fields.
 
 ### Candidate analysis
 
@@ -329,7 +331,6 @@ Each rule requires `name`, a Python-compatible regular-expression `expression`, 
 - `list_collections()` retrieves names, types, options, and UUIDs.
 - `$collStats` retrieves counts and storage measurements without scanning all documents.
 - Earliest/latest ObjectId queries use the `_id` index and a configurable time limit.
-- Oplog DDL entries are read once and only with `--check-oplog`.
 - Views are listed but do not receive storage-statistics requests.
 - Failures are captured per collection so the remaining inventory continues.
 - WiredTiger diagnostic internals, document bodies, credentials, and URIs are excluded.
