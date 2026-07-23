@@ -2,15 +2,38 @@
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
-PROJECT_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_DIR))
-import collection_inventory as inventory  # noqa: E402
+TEST_FILE = Path(__file__).resolve()
+SCRIPT_CANDIDATES = (
+    # Layout in this public package.
+    TEST_FILE.parents[1] / "collection_inventory.py",
+    # Layout after deployment to the mongodb-ops repository.
+    TEST_FILE.parents[3]
+    / "scripts"
+    / "collection-inventory"
+    / "collection_inventory.py",
+)
+SCRIPT_PATH = next((path for path in SCRIPT_CANDIDATES if path.is_file()), None)
+if SCRIPT_PATH is None:
+    searched = "\n".join(f"- {path}" for path in SCRIPT_CANDIDATES)
+    raise FileNotFoundError(
+        "collection_inventory.py was not found in a supported layout:\n"
+        f"{searched}"
+    )
+
+SPEC = importlib.util.spec_from_file_location("collection_inventory", SCRIPT_PATH)
+if SPEC is None or SPEC.loader is None:
+    raise ImportError(f"Unable to create an import specification for {SCRIPT_PATH}")
+
+inventory = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = inventory
+SPEC.loader.exec_module(inventory)
 
 UTC = timezone.utc
 
@@ -20,7 +43,9 @@ class InventoryHelpersTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.config = inventory.load_cleanup_config(PROJECT_DIR / "cleanup_patterns.json")
+        cls.config = inventory.load_cleanup_config(
+            SCRIPT_PATH.with_name("cleanup_patterns.json")
+        )
 
     def test_safe_name_rejects_path_traversal(self) -> None:
         with self.assertRaises(ValueError):
