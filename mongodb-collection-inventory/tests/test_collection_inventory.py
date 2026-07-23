@@ -64,8 +64,48 @@ class InventoryHelpersTest(unittest.TestCase):
             "customer_backup_20260701", self.config.patterns
         )
         self.assertEqual(
-            {match.name for match in matches}, {"backup_marker", "date_suffix"}
+            {match.name for match in matches},
+            {"backup_marker", "compact_numeric_date"},
         )
+
+    def test_extended_temporary_collection_patterns(self) -> None:
+        examples = {
+            "__mongodb_migrator_tmp__1741719028811": (
+                "mongodb_migrator_temporary"
+            ),
+            "ordersBkp04072025": "embedded_backup_suffix",
+            "ordersTestV2": "camel_case_test_suffix",
+            "orders_before_schemachanges": "schema_change_marker",
+            "comparison-results": "comparison_or_results",
+            "orders_12172025": "compact_numeric_date",
+            "16Jan2026Orders": "named_month_date",
+            "new": "generic_placeholder_name",
+        }
+        for collection_name, expected_pattern in examples.items():
+            with self.subTest(collection_name=collection_name):
+                matched_names = {
+                    match.name
+                    for match in inventory.match_patterns(
+                        collection_name, self.config.patterns
+                    )
+                }
+                self.assertIn(expected_pattern, matched_names)
+
+    def test_test_suffix_does_not_match_ordinary_words(self) -> None:
+        for collection_name in ("latest", "contest", "document_template"):
+            with self.subTest(collection_name=collection_name):
+                matched_names = {
+                    match.name
+                    for match in inventory.match_patterns(
+                        collection_name, self.config.patterns
+                    )
+                }
+                self.assertNotIn("camel_case_test_suffix", matched_names)
+                self.assertNotIn("test_marker", matched_names)
+
+    def test_removed_columns_are_not_exported(self) -> None:
+        self.assertNotIn("inventory_timestamp_utc", inventory.CSV_COLUMNS)
+        self.assertNotIn("index_sizes_json", inventory.CSV_COLUMNS)
 
     def test_source_name_is_inferred(self) -> None:
         source = inventory.find_source_collection(
