@@ -131,6 +131,8 @@ Every operational script should:
 - Use connection and operation timeouts.
 - Write reports under `~/work/data/mongodb/<ENVIRONMENT>/<CLUSTER>/`.
 - Write logs under `~/work/logs/mongodb/<ENVIRONMENT>/<CLUSTER>/`.
+- Use UTC timestamps in filenames and log records.
+- Restrict generated report and log files to permission mode `600`.
 - Return a nonzero exit status on failure.
 - Record per-object errors when a partial inventory can safely continue.
 - Exclude credentials and sensitive document contents from logs and reports.
