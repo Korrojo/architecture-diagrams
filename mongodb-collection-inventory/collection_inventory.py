@@ -540,22 +540,47 @@ def log_candidate_storage_estimates(
         sizes_by_database[str(row["database"])] += int(row["total_size_bytes"])
 
     total_bytes = sum(sizes_by_database.values())
+    database_width = max(
+        len("DATABASE"),
+        *(len(database_name) for database_name in sizes_by_database),
+    )
+    separator = "=" * (database_width + 38)
+    row_separator = "-" * len(separator)
+
+    logging.info(separator)
+    logging.info("CLEANUP CANDIDATE STORAGE ESTIMATE")
+    logging.info(separator)
+    logging.info(
+        "%-*s  %20s  %14s",
+        database_width,
+        "DATABASE",
+        "BYTES",
+        "GiB",
+    )
+    logging.info(row_separator)
     for database_name in sorted(sizes_by_database, key=str.casefold):
         database_bytes = sizes_by_database[database_name]
         logging.info(
-            "Estimated potential space freed database=%s bytes=%d gib=%.6f",
+            "%-*s  %20d  %14.6f",
+            database_width,
             database_name,
             database_bytes,
             gib(database_bytes),
         )
+    logging.info(row_separator)
     logging.info(
-        "Estimated potential space freed grand_total bytes=%d gib=%.6f "
-        "candidates=%d statistics_unavailable=%d",
+        "%-*s  %20d  %14.6f",
+        database_width,
+        "GRAND TOTAL",
         total_bytes,
         gib(total_bytes),
+    )
+    logging.info(
+        "Candidates: %d | Statistics unavailable: %d",
         candidate_count,
         unavailable_count,
     )
+    logging.info(separator)
 
 
 def run(args: argparse.Namespace) -> tuple[Path | None, Path, Path, int, int]:
