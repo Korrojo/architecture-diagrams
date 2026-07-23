@@ -210,19 +210,17 @@ class InventoryHelpersTest(unittest.TestCase):
         self.assertEqual(
             captured.output,
             [
-                (
-                    "INFO:root:Estimated potential space freed "
-                    "database=customers bytes=268435456 gib=0.250000"
-                ),
-                (
-                    "INFO:root:Estimated potential space freed "
-                    "database=orders bytes=1610612736 gib=1.500000"
-                ),
-                (
-                    "INFO:root:Estimated potential space freed grand_total "
-                    "bytes=1879048192 gib=1.750000 candidates=4 "
-                    "statistics_unavailable=1"
-                ),
+                "INFO:root:===============================================",
+                "INFO:root:CLEANUP CANDIDATE STORAGE ESTIMATE",
+                "INFO:root:===============================================",
+                "INFO:root:DATABASE                  BYTES             GiB",
+                "INFO:root:-----------------------------------------------",
+                "INFO:root:customers             268435456        0.250000",
+                "INFO:root:orders               1610612736        1.500000",
+                "INFO:root:-----------------------------------------------",
+                "INFO:root:GRAND TOTAL            1879048192        1.750000",
+                "INFO:root:Candidates: 4 | Statistics unavailable: 1",
+                "INFO:root:===============================================",
             ],
         )
 
