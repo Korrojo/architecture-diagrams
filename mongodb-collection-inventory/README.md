@@ -134,6 +134,15 @@ cleanup_candidates_<UTC timestamp>.csv
 
 Both CSV files are created with permission mode `600`.
 
+The terminal prints every generated location:
+
+```text
+Inventory: /home/user/work/data/mongodb/DEV/example-cluster/collection_inventory_20260723_142530.csv (185 collections)
+Candidates: /home/user/work/data/mongodb/DEV/example-cluster/cleanup_candidates_20260723_142530.csv (11 collections)
+Log folder: /home/user/work/logs/mongodb/DEV/example-cluster
+Log file: /home/user/work/logs/mongodb/DEV/example-cluster/collection_inventory_20260723_142530.log
+```
+
 ## Filtering and diagnostic options
 
 Inventory one database:
@@ -241,7 +250,6 @@ python scripts/collection-inventory/collection_inventory.py --help
 | `index_count` | Number of unique index names. |
 | `index_size_bytes`, `index_size_gib` | Total allocated index storage. |
 | `total_size_bytes`, `total_size_gib` | Collection storage plus index storage. |
-| `index_sizes_json` | Per-index sizes serialized into one CSV cell. |
 
 Byte columns are authoritative. GiB values are rounded to six decimal places.
 
@@ -270,20 +278,31 @@ MongoDB does not normally expose a durable collection creation timestamp. An Obj
 | `document_count_matches_source` | Exact count comparison when both statistics succeeded. |
 | `size_approximately_matches_source` | Logical-size comparison using configured tolerance. |
 | `candidate_score` | Evidence-weight sum for review prioritization. |
-| `inventory_timestamp_utc` | UTC report collection time. |
 | `error` | Per-collection failures; partial metadata remains in the row. |
 
 ## Default rules and scoring
 
-Patterns are separator-aware and case-insensitive. `orders_temp` matches; `document_template` does not.
+Rules cover separator-delimited markers, camel-case suffixes, migration artifacts, schema-change copies, comparison outputs, and several common date encodings. Case-sensitive rules are used where necessary to avoid ordinary-name false positives. For example, `ordersTestV2` is flagged while `latest` is not.
 
 | Evidence | Weight |
 | --- | ---: |
+| MongoDB Relational Migrator temporary name such as `__mongodb_migrator_tmp__1234567890` | 5 |
 | `_backup`, `-bak`, `.bkp` marker | 3 |
+| Embedded backup suffix such as `ordersBkp04072025` or `orders_backuptest` | 4 |
 | `_copy` or `-clone` marker | 3 |
 | `_temp` or `-tmp` marker | 3 |
+| Test prefix or separator-delimited test marker | 3 |
+| Camel-case test suffix such as `ordersTestV2` | 3 |
 | `_archive`, `_old`, `_restore`, or `_snapshot` marker | 3 |
-| Date suffix such as `_20260701`, `-2026-07-01`, or `.2026.07.01` | 2 |
+| Migration, migrator, migration-job, migration-collection, `mig`, or dump marker | 3 |
+| Comparison, compare, or results marker | 3 |
+| Legacy marker | 3 |
+| Delta marker | 2 |
+| `before_schemachanges` or `newschema` marker | 4 |
+| Exact placeholder name `new` or `collection` | 3 |
+| Compact `YYYYMMDD` or `MMDDYYYY` date embedded in a name | 2 |
+| Named-month date such as `16Jan2026` or `Jan2026` | 2 |
+| Segmented month/year such as `_02_24` or `-5-27` | 1 |
 | Inferred source collection exists | 2 |
 | Document count equals source | 1 |
 | Logical size is within 10% of source | 1 |
@@ -302,7 +321,7 @@ python scripts/collection-inventory/collection_inventory.py \
   --patterns-file /approved/path/cleanup_patterns.json
 ```
 
-Each rule requires `name`, a Python-compatible regular-expression `expression`, and an integer `weight`. Test additions against legitimate collection names to limit false positives.
+Each rule requires `name`, a Python-compatible regular-expression `expression`, and an integer `weight`. The optional `case_sensitive` field defaults to `false`. Test additions against legitimate collection names to limit false positives.
 
 ## Processing and performance
 

@@ -43,13 +43,13 @@ CSV_COLUMNS = (
     "storage_size_bytes", "storage_size_gib", "free_storage_size_bytes",
     "free_storage_percent", "average_document_size_bytes", "index_count",
     "index_size_bytes", "index_size_gib", "total_size_bytes", "total_size_gib",
-    "index_sizes_json", "oldest_objectid_date_utc", "newest_objectid_date_utc",
+    "oldest_objectid_date_utc", "newest_objectid_date_utc",
     "oplog_created_at_utc", "oplog_last_renamed_at_utc", "creation_date_utc",
     "creation_date_source", "creation_date_confidence",
     "matches_cleanup_pattern", "matched_patterns", "suspected_source_collection",
     "source_collection_exists", "document_count_matches_source",
     "size_approximately_matches_source", "candidate_score",
-    "inventory_timestamp_utc", "error",
+    "error",
 )
 
 
@@ -60,10 +60,12 @@ class CleanupPattern:
     name: str
     expression: str
     weight: int
+    case_sensitive: bool = False
     compiled: re.Pattern[str] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "compiled", re.compile(self.expression, re.IGNORECASE))
+        flags = 0 if self.case_sensitive else re.IGNORECASE
+        object.__setattr__(self, "compiled", re.compile(self.expression, flags))
 
 
 @dataclass(frozen=True)
@@ -201,12 +203,6 @@ def percentage(numerator: int | float, denominator: int | float) -> float:
     return round(float(numerator) / float(denominator) * 100, 2) if denominator else 0.0
 
 
-def json_cell(value: Any) -> str:
-    """Serialize a nested value deterministically into one CSV cell."""
-
-    return json.dumps(value if value is not None else {}, default=str, sort_keys=True)
-
-
 def load_cleanup_config(path: Path) -> CleanupConfig:
     """Load naming rules and scoring values from a JSON configuration file."""
 
@@ -216,7 +212,12 @@ def load_cleanup_config(path: Path) -> CleanupConfig:
     if not isinstance(items, list) or not items:
         raise ValueError("patterns must be a non-empty JSON array")
     patterns = tuple(
-        CleanupPattern(str(item["name"]), str(item["expression"]), int(item["weight"]))
+        CleanupPattern(
+            name=str(item["name"]),
+            expression=str(item["expression"]),
+            weight=int(item["weight"]),
+            case_sensitive=bool(item.get("case_sensitive", False)),
+        )
         for item in items
     )
     scoring = raw.get("scoring", {})
@@ -467,8 +468,10 @@ def assign_candidate_metadata(
 
 
 def empty_row(
-    environment: str, cluster: str, database: str,
-    info: Mapping[str, Any], inventory_time: datetime,
+    environment: str,
+    cluster: str,
+    database: str,
+    info: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Build a complete default row before optional metrics are populated."""
 
@@ -486,10 +489,9 @@ def empty_row(
         "free_storage_percent": 0.0, "average_document_size_bytes": 0.0,
         "index_count": 0, "index_size_bytes": 0, "index_size_gib": 0.0,
         "total_size_bytes": 0, "total_size_gib": 0.0,
-        "index_sizes_json": "{}", "matches_cleanup_pattern": False,
+        "matches_cleanup_pattern": False,
         "source_collection_exists": False, "document_count_matches_source": False,
         "size_approximately_matches_source": False, "candidate_score": 0,
-        "inventory_timestamp_utc": utc_text(inventory_time),
         "_statistics_available": False,
     })
     return row
@@ -497,12 +499,11 @@ def empty_row(
 
 def inventory_collection(
     database: Database[Any], info: Mapping[str, Any], environment: str, cluster: str,
-    inventory_time: datetime, oplog_event: OplogEvent,
-    skip_document_dates: bool, max_time_ms: int,
+    oplog_event: OplogEvent, skip_document_dates: bool, max_time_ms: int,
 ) -> dict[str, Any]:
     """Collect one row and preserve partial results when one operation fails."""
 
-    row = empty_row(environment, cluster, database.name, info, inventory_time)
+    row = empty_row(environment, cluster, database.name, info)
     collection = database[row["collection"]]
     errors: list[str] = []
 
@@ -527,7 +528,6 @@ def inventory_collection(
                 "index_size_gib": gib(stats["index_size_bytes"]),
                 "total_size_bytes": stats["total_size_bytes"],
                 "total_size_gib": gib(stats["total_size_bytes"]),
-                "index_sizes_json": json_cell(stats["index_sizes"]),
                 "_statistics_available": True,
             })
         except (PyMongoError, RuntimeError, TypeError, ValueError) as exc:
@@ -574,7 +574,7 @@ def write_csv(path: Path, rows: Iterable[Mapping[str, Any]]) -> int:
     return count
 
 
-def run(args: argparse.Namespace) -> tuple[Path | None, Path, int, int]:
+def run(args: argparse.Namespace) -> tuple[Path | None, Path, Path, int, int]:
     """Run discovery, collection, scoring, sorting, and CSV generation."""
 
     environment, cluster = safe_name(args.environment), safe_name(args.cluster)
@@ -622,7 +622,7 @@ def run(args: argparse.Namespace) -> tuple[Path | None, Path, int, int]:
                     continue
                 namespace = f"{database_name}.{collection_name}"
                 rows.append(inventory_collection(
-                    database, info, environment, cluster, inventory_time,
+                    database, info, environment, cluster,
                     oplog_events.get(namespace, OplogEvent()),
                     args.skip_document_dates, args.max_time_ms,
                 ))
@@ -643,20 +643,22 @@ def run(args: argparse.Namespace) -> tuple[Path | None, Path, int, int]:
     candidate_path = output_dir / f"cleanup_candidates_{timestamp}.csv"
     write_csv(candidate_path, candidates)
     logging.info("Completed collections=%d candidates=%d", len(rows), len(candidates))
-    return inventory_path, candidate_path, len(rows), len(candidates)
+    return inventory_path, candidate_path, log_file, len(rows), len(candidates)
 
 
 def main() -> int:
     """CLI entry point with concise errors and a nonzero failure status."""
 
     try:
-        inventory_path, candidate_path, rows, candidates = run(parse_args())
+        inventory_path, candidate_path, log_file, rows, candidates = run(parse_args())
     except (FileNotFoundError, ValueError, RuntimeError, OSError, PyMongoError, re.error) as exc:
         print(f"ERROR: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
     if inventory_path:
         print(f"Inventory: {inventory_path} ({rows} collections)")
     print(f"Candidates: {candidate_path} ({candidates} collections)")
+    print(f"Log folder: {log_file.parent}")
+    print(f"Log file: {log_file}")
     return 0
 
 

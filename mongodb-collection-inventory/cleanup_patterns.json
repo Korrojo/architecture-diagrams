@@ -1,9 +1,19 @@
 {
   "patterns": [
     {
+      "name": "mongodb_migrator_temporary",
+      "expression": "^__mongodb_migrator_tmp__\\d+$",
+      "weight": 5
+    },
+    {
       "name": "backup_marker",
       "expression": "(?:^|[._-])(?:backup|bak|bkp)(?:[._-]|$)",
       "weight": 3
+    },
+    {
+      "name": "embedded_backup_suffix",
+      "expression": "(?:backup|bkp|bak)(?:test|\\d+)$",
+      "weight": 4
     },
     {
       "name": "copy_or_clone_marker",
@@ -16,14 +26,71 @@
       "weight": 3
     },
     {
+      "name": "test_marker",
+      "expression": "(?:^test|(?:^|[._-])test(?:\\d+)?(?:[._-]|$))",
+      "weight": 3
+    },
+    {
+      "name": "camel_case_test_suffix",
+      "expression": "Test(?:V?\\d+)?$",
+      "weight": 3,
+      "case_sensitive": true
+    },
+    {
       "name": "archive_or_old_marker",
       "expression": "(?:^|[._-])(?:archive|old|restore|snapshot)(?:[._-]|$)",
       "weight": 3
     },
     {
-      "name": "date_suffix",
-      "expression": "(?:[._-])20\\d{2}(?:[._-]?(?:0[1-9]|1[0-2]))(?:[._-]?(?:0[1-9]|[12]\\d|3[01]))$",
+      "name": "migration_artifact",
+      "expression": "(?:migration(?:coll(?:ection)?|jobs)?|migrator|(?:^|[._-])mig(?:[._-]|$)|dump$)",
+      "weight": 3
+    },
+    {
+      "name": "comparison_or_results",
+      "expression": "(?:^|[._-])(?:comparison|compare|results?)(?:[._-]|$)",
+      "weight": 3
+    },
+    {
+      "name": "camel_case_compare_suffix",
+      "expression": "Compare$",
+      "weight": 3,
+      "case_sensitive": true
+    },
+    {
+      "name": "legacy_marker",
+      "expression": "legacy",
+      "weight": 3
+    },
+    {
+      "name": "delta_marker",
+      "expression": "(?:^|[._-])delta(?:[._-]|$)",
       "weight": 2
+    },
+    {
+      "name": "schema_change_marker",
+      "expression": "(?:before[._-]?schemachanges|new[._-]?schema)",
+      "weight": 4
+    },
+    {
+      "name": "generic_placeholder_name",
+      "expression": "^(?:new|collection)$",
+      "weight": 3
+    },
+    {
+      "name": "compact_numeric_date",
+      "expression": "(?<!\\d)(?:(?:20\\d{2})(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])(?:20\\d{2}))(?!\\d)",
+      "weight": 2
+    },
+    {
+      "name": "named_month_date",
+      "expression": "(?:(?:0?[1-9]|[12]\\d|3[01])(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:20\\d{2})?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)20\\d{2})",
+      "weight": 2
+    },
+    {
+      "name": "segmented_month_year",
+      "expression": "(?:^|[._-])(?:0?[1-9]|1[0-2])[._-](?:20)?\\d{2}(?:$|[._-])",
+      "weight": 1
     }
   ],
   "scoring": {
