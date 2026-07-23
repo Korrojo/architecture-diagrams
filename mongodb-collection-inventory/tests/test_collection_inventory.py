@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import importlib.util
+import logging
+import stat
 import sys
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -75,6 +78,23 @@ class InventoryHelpersTest(unittest.TestCase):
     def test_size_tolerance(self) -> None:
         self.assertTrue(inventory.approximately_equal(100, 91, 10.0))
         self.assertFalse(inventory.approximately_equal(100, 89, 10.0))
+
+    def test_log_uses_utc_format_and_restricted_permissions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            log_path = Path(temporary_directory) / "inventory.log"
+            inventory.configure_logging(log_path, "INFO")
+            logging.info("inventory test message")
+            for handler in logging.getLogger().handlers:
+                handler.flush()
+
+            self.assertEqual(stat.S_IMODE(log_path.stat().st_mode), 0o600)
+            self.assertRegex(
+                log_path.read_text(encoding="utf-8"),
+                (
+                    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z "
+                    r"INFO inventory test message\n$"
+                ),
+            )
 
     def test_candidate_scoring(self) -> None:
         now = datetime.now(UTC)
