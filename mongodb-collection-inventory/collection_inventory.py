@@ -420,11 +420,6 @@ def assign_candidate_metadata(
             "candidate_score": score,
         })
 
-    # Internal calculation keys are never written to CSV.
-    for row in rows:
-        row.pop("_statistics_available", None)
-
-
 def empty_row(
     environment: str,
     cluster: str,
@@ -528,6 +523,41 @@ def write_csv(path: Path, rows: Iterable[Mapping[str, Any]]) -> int:
     return count
 
 
+def log_candidate_storage_estimates(
+    candidates: Iterable[Mapping[str, Any]],
+) -> None:
+    """Log estimated candidate allocation by database and as a grand total."""
+
+    sizes_by_database: defaultdict[str, int] = defaultdict(int)
+    candidate_count = 0
+    unavailable_count = 0
+
+    for row in candidates:
+        candidate_count += 1
+        if not row.get("_statistics_available", False):
+            unavailable_count += 1
+            continue
+        sizes_by_database[str(row["database"])] += int(row["total_size_bytes"])
+
+    total_bytes = sum(sizes_by_database.values())
+    for database_name in sorted(sizes_by_database, key=str.casefold):
+        database_bytes = sizes_by_database[database_name]
+        logging.info(
+            "Estimated potential space freed database=%s bytes=%d gib=%.6f",
+            database_name,
+            database_bytes,
+            gib(database_bytes),
+        )
+    logging.info(
+        "Estimated potential space freed grand_total bytes=%d gib=%.6f "
+        "candidates=%d statistics_unavailable=%d",
+        total_bytes,
+        gib(total_bytes),
+        candidate_count,
+        unavailable_count,
+    )
+
+
 def run(args: argparse.Namespace) -> tuple[Path | None, Path, Path, int, int]:
     """Run discovery, collection, scoring, sorting, and CSV generation."""
 
@@ -587,6 +617,7 @@ def run(args: argparse.Namespace) -> tuple[Path | None, Path, Path, int, int]:
     candidate_path = output_dir / f"cleanup_candidates_{timestamp}.csv"
     write_csv(candidate_path, candidates)
     logging.info("Completed collections=%d candidates=%d", len(rows), len(candidates))
+    log_candidate_storage_estimates(candidates)
     return inventory_path, candidate_path, log_file, len(rows), len(candidates)
 
 
