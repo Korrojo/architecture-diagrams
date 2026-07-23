@@ -57,6 +57,20 @@ Example:
 2026-07-23T14:25:30.118Z INFO Starting inventory environment=PROD cluster=example-cluster
 ```
 
+The final log entries show estimated potential space freed for each database
+containing candidates, followed by a grand total:
+
+```text
+2026-07-23T14:26:12.441Z INFO Estimated potential space freed database=application_database bytes=1610612736 gib=1.500000
+2026-07-23T14:26:12.441Z INFO Estimated potential space freed grand_total bytes=1610612736 gib=1.500000 candidates=3 statistics_unavailable=0
+```
+
+The estimate sums `total_size_bytes`, which includes allocated collection and
+index storage. It excludes candidates whose collection statistics failed.
+`free_storage_size_bytes` is already part of allocated storage and is not added
+again. The estimate is intended for cleanup planning and does not guarantee the
+exact filesystem space returned after a collection is dropped.
+
 ## Recommended location in the operations repository
 
 Copy the executable and supporting files to:
