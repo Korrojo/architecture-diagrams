@@ -180,6 +180,52 @@ class InventoryHelpersTest(unittest.TestCase):
         self.assertTrue(candidate["size_approximately_matches_source"])
         self.assertEqual(candidate["candidate_score"], 10)
 
+    def test_candidate_storage_estimates_are_logged_by_database_and_total(self) -> None:
+        candidates = [
+            {
+                "database": "orders",
+                "total_size_bytes": 1_073_741_824,
+                "_statistics_available": True,
+            },
+            {
+                "database": "orders",
+                "total_size_bytes": 536_870_912,
+                "_statistics_available": True,
+            },
+            {
+                "database": "customers",
+                "total_size_bytes": 268_435_456,
+                "_statistics_available": True,
+            },
+            {
+                "database": "customers",
+                "total_size_bytes": 0,
+                "_statistics_available": False,
+            },
+        ]
+
+        with self.assertLogs(level="INFO") as captured:
+            inventory.log_candidate_storage_estimates(candidates)
+
+        self.assertEqual(
+            captured.output,
+            [
+                (
+                    "INFO:root:Estimated potential space freed "
+                    "database=customers bytes=268435456 gib=0.250000"
+                ),
+                (
+                    "INFO:root:Estimated potential space freed "
+                    "database=orders bytes=1610612736 gib=1.500000"
+                ),
+                (
+                    "INFO:root:Estimated potential space freed grand_total "
+                    "bytes=1879048192 gib=1.750000 candidates=4 "
+                    "statistics_unavailable=1"
+                ),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
