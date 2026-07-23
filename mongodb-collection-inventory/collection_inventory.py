@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import sys
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -83,6 +84,12 @@ class OplogEvent:
 
     created_at: datetime | None = None
     renamed_at: datetime | None = None
+
+
+class UTCFormatter(logging.Formatter):
+    """Format every log timestamp in UTC rather than host-local time."""
+
+    converter = time.gmtime
 
 
 def positive_int(value: str) -> int:
@@ -224,13 +231,24 @@ def load_cleanup_config(path: Path) -> CleanupConfig:
 
 
 def configure_logging(path: Path, level_name: str) -> None:
-    """Configure console logging and a local, environment-specific log file."""
+    """Configure UTC console/file logging and secure the log file to mode 0600."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(mode=0o600, exist_ok=True)
+    os.chmod(path, 0o600)
+
+    formatter = UTCFormatter(
+        fmt="%(asctime)s.%(msecs)03dZ %(levelname)s %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+    console_handler = logging.StreamHandler(sys.stdout)
+    file_handler = logging.FileHandler(path, encoding="utf-8")
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
+
     logging.basicConfig(
         level=getattr(logging, level_name),
-        format="%(asctime)s %(levelname)s %(message)s",
-        handlers=(logging.StreamHandler(sys.stdout), logging.FileHandler(path, encoding="utf-8")),
+        handlers=(console_handler, file_handler),
         force=True,
     )
 
