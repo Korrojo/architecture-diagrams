@@ -41,10 +41,16 @@ The output and log directories are created automatically. Credentials, reports, 
 
 ## Recommended location in the operations repository
 
-Copy this complete directory to:
+Copy the executable and supporting files to:
 
 ```text
-~/work/repos/mongodb-enterprise-ops/scripts/diagnostics/collection_inventory/
+~/work/repos/mongodb-ops/scripts/collection-inventory/
+```
+
+Place the test in the repository's central test structure:
+
+```text
+~/work/repos/mongodb-ops/tests/unit/collection-inventory/test_collection_inventory.py
 ```
 
 ## Requirements
@@ -64,7 +70,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install \
-  -r scripts/diagnostics/collection_inventory/requirements.txt
+  -r scripts/collection-inventory/requirements.txt
 ```
 
 On a managed network, use only the organization's approved proxy, certificate, or internal package mirror. The existing `wsl-db-workspace/APT_AND_PIP.md` contains the established WSL guidance.
@@ -96,7 +102,7 @@ The URI is never written to a report or log. Use the organization's approved aut
 Inventory every non-system database visible to the account:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment DEV \
   --cluster example-cluster
 ```
@@ -115,7 +121,7 @@ Both CSV files are created with permission mode `600`.
 Inventory one database:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment SAT \
   --cluster example-cluster \
   --database application_database
@@ -124,7 +130,7 @@ python scripts/diagnostics/collection_inventory/collection_inventory.py \
 Repeat `--database` for several databases:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment SAT \
   --cluster example-cluster \
   --database application_one \
@@ -134,7 +140,7 @@ python scripts/diagnostics/collection_inventory/collection_inventory.py \
 Limit collection names using a regular expression:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment PROD \
   --cluster example-cluster \
   --collection-regex '(?i)(backup|bak|bkp|copy|clone|temp|tmp|archive|old)'
@@ -143,7 +149,7 @@ python scripts/diagnostics/collection_inventory/collection_inventory.py \
 Write only the candidate report:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment PROD \
   --cluster example-cluster \
   --candidates-only
@@ -152,7 +158,7 @@ python scripts/diagnostics/collection_inventory/collection_inventory.py \
 Attempt exact creation dates from retained oplog entries:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment PROD \
   --cluster example-cluster \
   --check-oplog
@@ -161,7 +167,7 @@ python scripts/diagnostics/collection_inventory/collection_inventory.py \
 Include system databases explicitly:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment DEV \
   --cluster example-cluster \
   --include-system-databases
@@ -170,7 +176,7 @@ python scripts/diagnostics/collection_inventory/collection_inventory.py \
 Skip earliest/latest ObjectId lookups for the fastest metadata-only run:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment DEV \
   --cluster example-cluster \
   --skip-document-dates
@@ -189,7 +195,7 @@ Other controls:
 Display the complete CLI help:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py --help
+python scripts/collection-inventory/collection_inventory.py --help
 ```
 
 ## CSV fields
@@ -272,7 +278,7 @@ The default candidate threshold is `3`. A date suffix alone therefore remains in
 Edit a controlled copy of `cleanup_patterns.json`, then supply it:
 
 ```bash
-python scripts/diagnostics/collection_inventory/collection_inventory.py \
+python scripts/collection-inventory/collection_inventory.py \
   --environment DEV \
   --cluster example-cluster \
   --patterns-file /approved/path/cleanup_patterns.json
@@ -311,7 +317,7 @@ After installing the requirements:
 
 ```bash
 python -m unittest discover \
-  -s scripts/diagnostics/collection_inventory/tests \
+  -s tests/unit/collection-inventory \
   -v
 ```
 
@@ -321,7 +327,7 @@ Syntax-only validation:
 
 ```bash
 python -m py_compile \
-  scripts/diagnostics/collection_inventory/collection_inventory.py
+  scripts/collection-inventory/collection_inventory.py
 ```
 
 ## Security and sanitization
