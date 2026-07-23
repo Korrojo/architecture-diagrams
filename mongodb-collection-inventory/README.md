@@ -37,7 +37,25 @@ Log output:
 ~/work/logs/mongodb/<ENVIRONMENT>/<CLUSTER>/
 ```
 
-The output and log directories are created automatically. Credentials, reports, and logs remain outside Git.
+The output and log directories are created automatically. Credentials, reports, and logs remain outside Git. CSV and log files are restricted to permission mode `600`.
+
+Log filename:
+
+```text
+collection_inventory_YYYYMMDD_HHMMSS.log
+```
+
+The filename and every log-record timestamp use UTC. Log records use:
+
+```text
+YYYY-MM-DDTHH:MM:SS.mmmZ LEVEL Message
+```
+
+Example:
+
+```text
+2026-07-23T14:25:30.118Z INFO Starting inventory environment=PROD cluster=example-cluster
+```
 
 ## Recommended location in the operations repository
 
