@@ -32,6 +32,8 @@ Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterp
 - [Workspace creation script](wsl-db-workspace/create-workspace.sh)
 - [APT and pip network guide](wsl-db-workspace/APT_AND_PIP.md)
 - [MongoDB user and role inventory script](wsl-db-workspace/export_users_roles.py)
+- [MongoDB operations workspace guide](mongodb-ops/README.md)
+- [MongoDB scripts folder guide](mongodb-ops/scripts/README.md)
 
 ## MongoDB Operations
 
