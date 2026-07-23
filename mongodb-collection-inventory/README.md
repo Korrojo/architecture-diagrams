@@ -61,8 +61,16 @@ The final log entries show estimated potential space freed for each database
 containing candidates, followed by a grand total:
 
 ```text
-2026-07-23T14:26:12.441Z INFO Estimated potential space freed database=application_database bytes=1610612736 gib=1.500000
-2026-07-23T14:26:12.441Z INFO Estimated potential space freed grand_total bytes=1610612736 gib=1.500000 candidates=3 statistics_unavailable=0
+2026-07-23T14:26:12.441Z INFO ========================================================
+2026-07-23T14:26:12.441Z INFO CLEANUP CANDIDATE STORAGE ESTIMATE
+2026-07-23T14:26:12.441Z INFO ========================================================
+2026-07-23T14:26:12.441Z INFO DATABASE                         BYTES             GiB
+2026-07-23T14:26:12.441Z INFO --------------------------------------------------------
+2026-07-23T14:26:12.441Z INFO application_database       1610612736        1.500000
+2026-07-23T14:26:12.441Z INFO --------------------------------------------------------
+2026-07-23T14:26:12.441Z INFO GRAND TOTAL                1610612736        1.500000
+2026-07-23T14:26:12.441Z INFO Candidates: 3 | Statistics unavailable: 0
+2026-07-23T14:26:12.441Z INFO ========================================================
 ```
 
 The estimate sums `total_size_bytes`, which includes allocated collection and
