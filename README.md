@@ -45,6 +45,10 @@ Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterp
 
 - [Application-team questionnaire and sizing package](mongodb-cluster-sizing/README.md)
 
+## Oracle-to-MongoDB Migration
+
+- [MongoDB Relational Migrator vs. AWS Glue](oracle-to-mongodb-migration/relational-migrator-vs-aws-glue.md)
+
 ## Sanitization
 
 All diagrams and scripts in this repository must use generic labels. Do not include:
