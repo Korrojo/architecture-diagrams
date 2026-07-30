@@ -1,28 +1,47 @@
-# Oracle Parent/History Tables to an Embedded MongoDB Model
+# Oracle-to-MongoDB Relational Migrator Learning Labs
 
 _Last reviewed: July 30, 2026_
 
 ## Purpose
 
-This teaching example documents a complete MongoDB Relational Migrator workflow for two related Oracle tables:
+This teaching guide documents three progressively more advanced MongoDB Relational Migrator workflows using the same sanitized Oracle sample:
 
 - `PRODUCT_CATALOG_ITEM`: the current state of a catalog item
 - `PRODUCT_PRICE_HISTORY`: historical price changes for the catalog item
 
-The target is one MongoDB collection in which each current catalog item is a root document and its price-change rows are stored in a `priceHistory` array.
+Students can migrate one table directly, migrate both tables as separate collections with a reference, or embed the history rows inside the parent document.
 
 All source names and infrastructure details in this guide are sanitized. Replace them with approved local values from the source data dictionary. Never place credentials, internal hostnames, or production data in a public repository.
 
-## Target Outcome
+## Learning Path
 
 ```mermaid
-flowchart LR
-    P["Oracle PRODUCT_CATALOG_ITEM"] -->|"One root document per catalog item"| M["MongoDB catalogItems"]
-    H["Oracle PRODUCT_PRICE_HISTORY"] -->|"Embed by ITEM_KEY"| A["priceHistory array"]
-    A --> M
+flowchart TD
+    S["Start with source analysis and connections"] --> L1["Lab 1: One table → one collection"]
+    L1 --> L2["Lab 2: Two tables → two referenced collections"]
+    L2 --> L3["Lab 3: Two tables → parent with embedded array"]
 ```
 
-Example MongoDB document:
+| Lab | Source scope | MongoDB outcome | Use it to learn |
+|---|---|---|---|
+| 1. Direct mapping | `PRODUCT_CATALOG_ITEM` only | `catalogItems` | The simplest snapshot, field mapping, and validation workflow |
+| 2. Reference model | Both tables | `catalogItems` and `priceHistoryEvents` | Separate collections, retained join key, indexes, and application-side or `$lookup` joins |
+| 3. Embedded model | Both tables | `catalogItems` with `priceHistory[]` | One-to-many embedding, redundant-field removal, array ordering, and document growth |
+
+Create a separate Relational Migrator project, or a deliberate copy of the base project, for each lab. Reference and embedded mappings are alternative target designs; do not combine both in the same student result unless duplicating the child data is an explicit requirement.
+
+### Choosing between the three models
+
+| Condition | Direct mapping | Reference model | Embedded model |
+|---|---:|---:|---:|
+| Only one independent table is in scope | Best fit | Not applicable | Not applicable |
+| Child records are queried or retained independently | — | Prefer | Avoid unless also bounded and read with parent |
+| Child collection grows without a practical bound | — | Prefer | Avoid |
+| Parent and children are usually read together | — | Possible | Prefer |
+| Aggregate should be updated atomically in one document | — | No | Prefer |
+| Child has a separate lifecycle or very high write rate | — | Prefer | Usually avoid |
+
+Embedding is not automatically better than referencing. Choose from application access patterns, lifecycle, write behavior, child cardinality, retention, and the MongoDB document-size limit—not merely from the presence of a foreign key.
 
 ```javascript
 {
@@ -246,42 +265,42 @@ If schema discovery cannot see the real cross-schema relationship, use a DDL imp
 
 Use a dedicated empty test database for the first migration. Confirm the target database name before enabling any option that drops destination collections.
 
-## 4. Create the Project and Initial Model
+## 4. Create Separate Lab Projects
 
-Recommended project naming:
-
-```text
-<application>-<domain>-oracle-to-mongodb-<environment>
-```
-
-Sanitized example:
+Use a common naming pattern:
 
 ```text
-catalog-pricing-oracle-to-mongodb-sat
+<application>-<domain>-<model>-<environment>
 ```
 
-For **Initial mappings**:
-
-1. Select **Start with a recommended MongoDB schema**.
-2. Keep `PRODUCT_CATALOG_ITEM` as a top-level collection.
-3. Do not create `PRODUCT_PRICE_HISTORY` as a second top-level collection when the approved design is to embed its rows.
-4. Use `camelCase` for MongoDB field names.
-
-One project can contain multiple related tables and multiple migration jobs. Do not create one project per table. Create a separate project when the tables belong to another application domain, require an unrelated document model, or target a different MongoDB database.
-
-## 5. Create the Parent Mapping
-
-Map `PRODUCT_CATALOG_ITEM` as new documents in:
+Sanitized lab examples:
 
 ```text
-catalogItems
+catalog-pricing-single-table-lab
+catalog-pricing-reference-lab
+catalog-pricing-embedded-lab
 ```
 
-Suggested fields:
+Use `camelCase` for MongoDB collection and field names. Start each lab from a separate project or project copy so its mappings and validation results remain unambiguous.
+
+A production project can contain multiple related tables and migration jobs. The separate-project recommendation here is for teaching and design comparison, not a Relational Migrator limitation.
+
+## 5. Lab 1 — Migrate One Table Directly
+
+This is the simplest workflow: one Oracle table becomes one MongoDB collection, without relationships or embedded arrays.
+
+### 5.1 Initial mapping
+
+1. Select only `PRODUCT_CATALOG_ITEM`.
+2. Select **Start with a MongoDB schema that matches your relational schema** for the clearest one-to-one exercise. The recommended schema is also acceptable if it produces one top-level collection.
+3. Map the table as **New documents**.
+4. Name the collection `catalogItems`.
+
+### 5.2 Field mapping
 
 | Source column | MongoDB field | Treatment |
 |---|---|---|
-| `ITEM_KEY` | `itemKey` | Retain; parent/child business key |
+| `ITEM_KEY` | `itemKey` | Retain as the business key |
 | `SKU` | `sku` | Retain |
 | `PRODUCT_NAME` | `productName` | Retain |
 | `CATEGORY_CODE` | `categoryCode` | Retain |
@@ -292,15 +311,104 @@ Suggested fields:
 | `CREATED_AT` | `createdAt` | Map to BSON Date |
 | `UPDATED_AT` | `updatedAt` | Map to BSON Date |
 
-### `_id` decision
+### 5.3 `_id` decision
 
 - If `ITEM_KEY` is a declared, non-null, single-column Oracle primary key, consider **Single Inherited Primary Key**.
-- If it is only a unique constraint or a logical key, keep the default `ObjectId` for the walkthrough and retain `itemKey`.
-- Document the decision before production migration because changing `_id` later is disruptive.
+- If it is only a unique constraint or logical key, keep the default `ObjectId` and retain `itemKey`.
+- Use the same parent `_id` decision in Labs 2 and 3 so the results are comparable.
 
-## 6. Create the Embedded History Mapping
+Expected document shape:
 
-### 6.1 Confirm the relationship is available
+```javascript
+{
+  _id: ObjectId("..."),
+  itemKey: "ITEM-10001",
+  sku: "SKU-20001",
+  productName: "Example Product",
+  categoryCode: "OFFICE",
+  supplierKey: "SUP-30001",
+  currentPrice: NumberDecimal("29.95"),
+  currencyCode: "USD",
+  active: true,
+  createdAt: ISODate("2026-07-01T12:00:00.000Z"),
+  updatedAt: ISODate("2026-07-02T14:30:00.000Z")
+}
+```
+
+## 6. Lab 2 — Migrate Two Tables as Referenced Collections
+
+This model keeps parent and history records independent. MongoDB does not enforce a foreign key; the retained `itemKey` is an application-level reference.
+
+### 6.1 Initial mapping
+
+1. Select both Oracle tables.
+2. Keep both as top-level collections.
+3. Map `PRODUCT_CATALOG_ITEM` as **New documents** in `catalogItems`.
+4. Map `PRODUCT_PRICE_HISTORY` as **New documents** in `priceHistoryEvents`.
+
+Use the Lab 1 field mapping for `catalogItems`. For `priceHistoryEvents`, use:
+
+| Source column | MongoDB field | Treatment |
+|---|---|---|
+| `PRICE_EVENT_KEY` | `priceEventId` | Retain; candidate child identifier |
+| `ITEM_KEY` | `itemKey` | Retain; required reference to the parent |
+| `PREVIOUS_PRICE` | `previousPrice` | Retain |
+| `NEW_PRICE` | `newPrice` | Retain |
+| `CURRENCY_CODE` | `currencyCode` | Retain |
+| `CHANGE_REASON` | `changeReason` | Retain |
+| `CHANGE_ACTION` | `changeAction` | Retain |
+| `EFFECTIVE_AT` | `effectiveAt` | Retain |
+| `RECORDED_AT` | `recordedAt` | Retain |
+
+If `PRICE_EVENT_KEY` is a declared primary key, it can become the child `_id`. Otherwise, keep the generated `ObjectId` and retain `priceEventId`.
+
+Expected shapes:
+
+```javascript
+// catalogItems
+{
+  _id: ObjectId("..."),
+  itemKey: "ITEM-10001",
+  sku: "SKU-20001",
+  productName: "Example Product",
+  currentPrice: NumberDecimal("29.95")
+}
+
+// priceHistoryEvents
+{
+  _id: ObjectId("..."),
+  priceEventId: 501,
+  itemKey: "ITEM-10001",
+  previousPrice: NumberDecimal("24.95"),
+  newPrice: NumberDecimal("29.95"),
+  changeAction: "INCREASE",
+  recordedAt: ISODate("2026-07-02T14:30:00.000Z")
+}
+```
+
+### 6.2 Add reference indexes
+
+After confirming uniqueness and data quality, create:
+
+```javascript
+db.catalogItems.createIndex(
+  { itemKey: 1 },
+  { unique: true, name: "uq_itemKey" }
+)
+
+db.priceHistoryEvents.createIndex(
+  { itemKey: 1, recordedAt: 1 },
+  { name: "ix_itemKey_recordedAt" }
+)
+```
+
+The application can query the two collections separately or join them with `$lookup`. Treat the reference as an application contract because MongoDB will not reject a child whose `itemKey` has no matching parent.
+
+## 7. Lab 3 — Embed the Related Table
+
+This model creates one `catalogItems` collection and embeds matching history records in a `priceHistory` array.
+
+### 7.1 Confirm the relationship is available
 
 An embedded-array mapping is enabled only when Relational Migrator recognizes the history table as the many side of a usable relationship and the parent is mapped to a collection.
 
@@ -321,9 +429,9 @@ Cardinality:   One-to-many
 
 Prefer the real Oracle constraint when it can be imported. Use a synthetic relationship only to represent a verified logical relationship that Relational Migrator cannot discover.
 
-### 6.2 Add the embedded array
+### 7.2 Configure the mappings
 
-Select `PRODUCT_PRICE_HISTORY`, click **+ Add**, and configure:
+Map `PRODUCT_CATALOG_ITEM` as **New documents** in `catalogItems`, using the Lab 1 parent fields. Select `PRODUCT_PRICE_HISTORY`, click **+ Add**, and configure:
 
 ```text
 Migrate table as: Embedded array
@@ -333,28 +441,28 @@ Field name: priceHistory
 Foreign-key link: ITEM_KEY relationship
 ```
 
-Use `priceHistory`, not an autogenerated name that repeats the full table or collection name. The parent document already supplies the context.
+Use `priceHistory`, not an autogenerated name that repeats the full table or collection name.
 
-### 6.3 Embedded field treatment
+### 7.3 Embedded field treatment
 
 | Source column | MongoDB field | Treatment |
 |---|---|---|
 | generated embedded `_id` | — | Exclude when `priceEventId` is retained |
 | `PRICE_EVENT_KEY` | `priceEventId` | Retain |
-| `ITEM_KEY` | — | Exclude; redundant parent join key |
-| `PREVIOUS_PRICE` | `previousPrice` | Retain as historical snapshot |
-| `NEW_PRICE` | `newPrice` | Retain as historical snapshot |
+| `ITEM_KEY` | — | Exclude; the parent already provides the relationship |
+| `PREVIOUS_PRICE` | `previousPrice` | Retain as a historical snapshot |
+| `NEW_PRICE` | `newPrice` | Retain as a historical snapshot |
 | `CURRENCY_CODE` | `currencyCode` | Retain |
 | `CHANGE_REASON` | `changeReason` | Retain |
 | `CHANGE_ACTION` | `changeAction` | Retain |
 | `EFFECTIVE_AT` | `effectiveAt` | Retain |
 | `RECORDED_AT` | `recordedAt` | Retain |
 
-Repeated price and currency fields should remain in the child row when they capture the state at the time of the event. Remove them only after the application owner confirms they are redundant rather than historical snapshots.
+Repeated price and currency fields should remain when they represent event-time state. Remove them only after the application owner confirms they are redundant.
 
-### 6.4 Sort the history array
+### 7.4 Sort the embedded array
 
-In the embedded-array mapping:
+In the history mapping:
 
 1. Expand **Advanced settings**.
 2. Leave **Add mapping rule filter** unchecked unless a real filtering requirement exists.
@@ -367,13 +475,13 @@ Order: Ascending
 Limit: No limit
 ```
 
-Keep the sort field included in the mapping. Excluded fields cannot be used for array sorting.
+Keep `RECORDED_AT` included in the mapping; an excluded field cannot be used for array sorting.
 
-### 6.5 Handle Oracle `TIMESTAMP(6)`
+### 7.5 Handle Oracle `TIMESTAMP(6)`
 
 MongoDB BSON Date stores millisecond precision, while Oracle `TIMESTAMP(6)` can store microseconds. Mapping to BSON Date may lose the final three fractional-second digits.
 
-Use BSON Date when millisecond precision is sufficient and add a mapping note:
+Use BSON Date when millisecond precision is sufficient and add this note:
 
 ```text
 Oracle TIMESTAMP(6) has microsecond precision. BSON Date preserves
@@ -381,28 +489,49 @@ millisecond precision; sub-millisecond digits may be truncated.
 Use priceEventId as a secondary ordering key.
 ```
 
-If exact microsecond fidelity is required, use a supported String or Long conversion strategy and document how the application will query and compare that representation. Relational Migrator 1.16 added Oracle timestamp conversion options and full-precision String conversions.
+If exact microsecond fidelity is required, use a supported String or Long conversion strategy and document how the application will query and compare it.
 
-## 7. Review the Generated Model
+Expected embedded shape:
 
-Open **JSON Schema** and review the sample document.
+```javascript
+{
+  _id: ObjectId("..."),
+  itemKey: "ITEM-10001",
+  sku: "SKU-20001",
+  productName: "Example Product",
+  currentPrice: NumberDecimal("29.95"),
+  priceHistory: [
+    {
+      priceEventId: 501,
+      previousPrice: NumberDecimal("24.95"),
+      newPrice: NumberDecimal("29.95"),
+      currencyCode: "USD",
+      changeReason: "Annual price review",
+      changeAction: "INCREASE",
+      effectiveAt: ISODate("2026-07-02T00:00:00.000Z"),
+      recordedAt: ISODate("2026-07-02T14:30:00.000Z")
+    }
+  ]
+}
+```
 
-Confirm:
+## 8. Review the Generated Model
 
-- There is one root collection.
-- `priceHistory` is an array under the root document.
-- The embedded row does not repeat `itemKey`.
-- The embedded row does not contain an unnecessary generated `_id`.
+Open **JSON Schema** for the selected lab and confirm:
+
+- Lab 1 has one root collection and no relationship artifacts.
+- Lab 2 has two root collections and retains `itemKey` in each child document.
+- Lab 3 has one root collection, a `priceHistory` array, no redundant child `itemKey`, and no unnecessary generated embedded `_id`.
 - Oracle numbers map to intentional BSON numeric types.
 - Timestamps use the approved precision strategy.
 - Null-handling choices match application requirements.
-- Names are readable and follow the chosen casing convention.
+- Names follow the chosen casing convention.
 
-The generated sample typically contains one history element. It proves the shape, not the sort order. Confirm sorting after migrating a parent that has multiple history rows.
+The Lab 3 sample usually contains only one history element. It proves the shape, not the sort order; verify ordering after migrating a parent with multiple history rows.
 
-## 8. Run the Snapshot Migration
+## 9. Run the Snapshot Migration
 
-### 8.1 Understand the prerequisite warning
+### 9.1 Understand the prerequisite warning
 
 The migration-job wizard may report:
 
@@ -419,7 +548,7 @@ Select **Generate script**, then:
 
 Do not execute a generated database-configuration script blindly, especially against a shared or production Oracle database.
 
-### 8.2 Recommended first-test options
+### 9.2 Recommended first-test options
 
 ```text
 Mode: Snapshot
@@ -432,7 +561,7 @@ The drop option deletes the existing destination collections before loading. Nev
 
 Snapshot jobs are non-idempotent by default and can insert duplicates when rerun. For repeatable disposable tests, start with an empty target or drop the test collection. Relational Migrator can enable idempotency through `user.properties`, but MongoDB warns that this can materially affect performance on large jobs.
 
-### 8.3 Start and monitor
+### 9.3 Start and monitor
 
 1. Review source and destination connection names.
 2. Confirm the target database is the test database.
@@ -447,23 +576,55 @@ For a Linux installation, the application log is:
 ~/.mongodb/relational-migrator/migrator.log
 ```
 
-## 9. Validate the Result
+## 10. Validate the Result
 
 Built-in verification should be enabled, but also perform model-specific checks.
 
-### 9.1 Root-document count
+### 10.1 Lab 1 checks
 
-The MongoDB root-document count should equal the valid parent-row count:
+The `catalogItems` count must equal the valid Oracle parent-row count:
 
 ```javascript
 db.catalogItems.countDocuments()
 ```
 
-### 9.2 Total embedded-history count
+Sample representative rows and compare identifiers, prices, null handling, timestamp interpretation, non-ASCII strings, and maximum-length strings.
 
-The total number of embedded elements should equal the valid, joined history-row count:
+### 10.2 Lab 2 checks
+
+The two MongoDB counts must equal the corresponding valid Oracle row counts:
 
 ```javascript
+db.catalogItems.countDocuments()
+db.priceHistoryEvents.countDocuments()
+```
+
+Find child references that do not resolve to a parent:
+
+```javascript
+db.priceHistoryEvents.aggregate([
+  {
+    $lookup: {
+      from: "catalogItems",
+      localField: "itemKey",
+      foreignField: "itemKey",
+      as: "parent"
+    }
+  },
+  { $match: { parent: { $eq: [] } } },
+  { $count: "orphanReferences" }
+])
+```
+
+The expected orphan count is zero unless the source analysis identified and approved exceptions. Confirm the parent and child indexes from Section 6.2 are present.
+
+### 10.3 Lab 3 checks
+
+The root-document count must equal the valid parent-row count. The total number of embedded elements must equal the valid, joined child-row count:
+
+```javascript
+db.catalogItems.countDocuments()
+
 db.catalogItems.aggregate([
   {
     $project: {
@@ -479,8 +640,6 @@ db.catalogItems.aggregate([
 ])
 ```
 
-### 9.3 Check chronological ordering
-
 Inspect parents with multiple history entries:
 
 ```javascript
@@ -492,21 +651,17 @@ db.catalogItems.find(
 
 If timestamp values can collide after microsecond-to-millisecond conversion, use `priceEventId` as a deterministic secondary ordering key in application logic.
 
-### 9.4 Validate representative records
+### 10.4 Compare all three results
 
-Compare sampled records across Oracle and MongoDB for:
+For the same sample parent, compare:
 
-- Parent identifiers
-- SKU, category, and supplier fields
-- Price, currency, and change-reason values
-- Null handling
-- Timestamp precision and timezone interpretation
-- History element count and order
-- Non-ASCII and maximum-length strings
+- Lab 1: a single independent parent document
+- Lab 2: a parent document plus independently queryable child documents
+- Lab 3: a parent document containing an ordered child array
 
-### 9.5 Add application indexes
+Document which design best matches the intended queries, writes, retention, and ownership. The exercise is complete only when the model choice is explained, not merely when the row counts match.
 
-After confirming uniqueness, consider:
+For Labs 1 and 3, add the parent business-key index after confirming uniqueness:
 
 ```javascript
 db.catalogItems.createIndex(
@@ -517,7 +672,7 @@ db.catalogItems.createIndex(
 
 Create other indexes from verified application query patterns, not solely from the indexes that existed in Oracle.
 
-## 10. Snapshot Versus CDC
+## 11. Snapshot Versus CDC
 
 ### Snapshot
 
@@ -568,7 +723,7 @@ Choose an explicit alternative:
 
 AWS Glue JDBC bookmarks are incremental batch processing, not complete Oracle redo-log CDC. They do not automatically capture arbitrary updates, deletes, or transaction order.
 
-## 11. Errors and Warnings Encountered in This Workflow
+## 12. Errors and Warnings Encountered in This Workflow
 
 | Symptom | Meaning | Response |
 |---|---|---|
@@ -578,8 +733,9 @@ AWS Glue JDBC bookmarks are incremental batch processing, not complete Oracle re
 | Snapshot source-configuration warning | Required Oracle privileges or configuration are missing | Generate the SQL script and have the Oracle DBA review and apply approved statements |
 | Continuous option is unavailable | Standalone Relational Migrator 1.15+ no longer includes CDC | Engage MongoDB AMP or select another approved CDC/cutover strategy |
 
-## 12. Completion Checklist
+## 13. Completion Checklist
 
+- [ ] Lab scope selected: direct, reference, or embedded
 - [ ] Parent and history ownership confirmed
 - [ ] Parent key is unique and non-null
 - [ ] Foreign key and orphan count reviewed
@@ -588,17 +744,20 @@ AWS Glue JDBC bookmarks are incremental batch processing, not complete Oracle re
 - [ ] Oracle migration account approved
 - [ ] MongoDB migration writer approved
 - [ ] Connections named and tagged by environment
-- [ ] Parent mapped to one top-level collection
-- [ ] History mapped as `history` embedded array
-- [ ] Redundant embedded `_id` and parent join key excluded
-- [ ] Historical snapshot fields retained intentionally
+- [ ] Lab 1 maps the parent table to one collection without relationship artifacts
+- [ ] Lab 2 maps both tables to collections and retains the child `itemKey` reference
+- [ ] Lab 2 reference indexes and orphan-reference validation completed
+- [ ] Lab 3 maps the child as the `priceHistory` embedded array
+- [ ] Lab 3 excludes the redundant embedded `_id` and parent join key
+- [ ] Historical snapshot fields are retained intentionally
 - [ ] Timestamp precision decision documented
-- [ ] Array sorted ascending with no unintended limit
+- [ ] Lab 3 array sorted ascending with no unintended limit
 - [ ] JSON Schema and sample document reviewed
 - [ ] Generated Oracle prerequisite script reviewed by DBA
 - [ ] First snapshot targets a disposable database
 - [ ] Error threshold and built-in verification enabled
-- [ ] Counts, field values, history ordering, and nulls reconciled
+- [ ] Lab-specific counts, values, references or array ordering, and nulls reconciled
+- [ ] Reference-versus-embedding decision recorded using access patterns and growth
 - [ ] CDC/AMP or controlled-cutover strategy documented
 - [ ] Project export, logs, and validation evidence retained
 
