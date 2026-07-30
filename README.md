@@ -48,6 +48,7 @@ Sanitized setup for separate Oracle-to-MongoDB Glue migration and MongoDB Enterp
 ## Oracle-to-MongoDB Migration
 
 - [MongoDB Relational Migrator vs. AWS Glue](oracle-to-mongodb-migration/relational-migrator-vs-aws-glue.md)
+- [Relational Migrator parent/history embedded-array walkthrough](oracle-to-mongodb-migration/relational-migrator-parent-history-walkthrough.md)
 
 ## Sanitization
 
