@@ -6,10 +6,10 @@ _Last reviewed: July 30, 2026_
 
 This teaching example documents a complete MongoDB Relational Migrator workflow for two related Oracle tables:
 
-- `RULE_FINDING`: the current state of a rule finding
-- `RULE_FINDING_HISTORY`: the change history for that finding
+- `PRODUCT_CATALOG_ITEM`: the current state of a catalog item
+- `PRODUCT_PRICE_HISTORY`: historical price changes for the catalog item
 
-The target is one MongoDB collection in which each current finding is a root document and its history rows are stored in a `history` array.
+The target is one MongoDB collection in which each current catalog item is a root document and its price-change rows are stored in a `priceHistory` array.
 
 All source names and infrastructure details in this guide are sanitized. Replace them with approved local values from the source data dictionary. Never place credentials, internal hostnames, or production data in a public repository.
 
@@ -17,8 +17,8 @@ All source names and infrastructure details in this guide are sanitized. Replace
 
 ```mermaid
 flowchart LR
-    P["Oracle RULE_FINDING"] -->|"One root document per finding"| M["MongoDB ruleFindings"]
-    H["Oracle RULE_FINDING_HISTORY"] -->|"Embed by FINDING_ID"| A["history array"]
+    P["Oracle PRODUCT_CATALOG_ITEM"] -->|"One root document per catalog item"| M["MongoDB catalogItems"]
+    H["Oracle PRODUCT_PRICE_HISTORY"] -->|"Embed by ITEM_KEY"| A["priceHistory array"]
     A --> M
 ```
 
@@ -27,29 +27,25 @@ Example MongoDB document:
 ```javascript
 {
   _id: ObjectId("..."),
-  findingId: "F-10001",
-  sourceTableId: 100,
-  sourceTableName: "SOURCE_TABLE",
-  ruleId: 42,
-  matchType: "EXACT",
-  matchId: "M-20001",
-  subjectId: "S-30001",
-  subjectTable: "SUBJECT_TABLE",
-  finding: "Example finding",
+  itemKey: "ITEM-10001",
+  sku: "SKU-20001",
+  productName: "Example Product",
+  categoryCode: "OFFICE",
+  supplierKey: "SUP-30001",
+  currentPrice: NumberDecimal("29.95"),
+  currencyCode: "USD",
+  active: true,
   createdAt: ISODate("2026-07-01T12:00:00.000Z"),
   updatedAt: ISODate("2026-07-02T14:30:00.000Z"),
-  history: [
+  priceHistory: [
     {
-      historyId: 501,
-      sourceTableId: 100,
-      sourceTableName: "SOURCE_TABLE",
-      ruleId: 42,
-      matchedSourceId: "M-20001",
-      matchedSourceName: "EXAMPLE",
-      matchedSourceTypeId: 2,
-      finding: "Earlier finding state",
-      action: "UPDATE",
-      originalTimestamp: ISODate("2026-07-01T12:00:00.000Z"),
+      priceEventId: 501,
+      previousPrice: NumberDecimal("24.95"),
+      newPrice: NumberDecimal("29.95"),
+      currencyCode: "USD",
+      changeReason: "Annual price review",
+      changeAction: "INCREASE",
+      effectiveAt: ISODate("2026-07-02T00:00:00.000Z"),
       recordedAt: ISODate("2026-07-02T14:30:00.000Z")
     }
   ]
@@ -62,10 +58,10 @@ Example MongoDB document:
 
 Establish that:
 
-- `RULE_FINDING.FINDING_ID` identifies the current finding.
-- `RULE_FINDING_HISTORY.FINDING_ID` refers to the parent finding.
+- `PRODUCT_CATALOG_ITEM.ITEM_KEY` identifies the current catalog item.
+- `PRODUCT_PRICE_HISTORY.ITEM_KEY` refers to the parent catalog item.
 - The relationship is one parent to zero or more history rows.
-- History normally belongs to and is read with the current finding.
+- History normally belongs to and is read with the current catalog item.
 - History retention and growth will not create unbounded MongoDB documents.
 
 Do not decide to embed solely because a foreign key exists. The application access pattern and maximum child cardinality must support embedding.
@@ -76,42 +72,42 @@ Run equivalent queries using the approved schema owner:
 
 ```sql
 SELECT COUNT(*) AS parent_rows
-FROM <SOURCE_OWNER>.RULE_FINDING;
+FROM <SOURCE_OWNER>.PRODUCT_CATALOG_ITEM;
 
 SELECT
     COUNT(*) AS history_rows,
-    COUNT(DISTINCT FINDING_ID) AS parents_with_history
-FROM <SOURCE_OWNER>.RULE_FINDING_HISTORY;
+    COUNT(DISTINCT ITEM_KEY) AS parents_with_history
+FROM <SOURCE_OWNER>.PRODUCT_PRICE_HISTORY;
 
-SELECT MAX(history_count) AS maximum_history_rows_per_finding
+SELECT MAX(history_count) AS maximum_price_history_rows_per_item
 FROM (
-    SELECT FINDING_ID, COUNT(*) AS history_count
-    FROM <SOURCE_OWNER>.RULE_FINDING_HISTORY
-    GROUP BY FINDING_ID
+    SELECT ITEM_KEY, COUNT(*) AS history_count
+    FROM <SOURCE_OWNER>.PRODUCT_PRICE_HISTORY
+    GROUP BY ITEM_KEY
 );
 ```
 
 Check parent-key quality:
 
 ```sql
-SELECT FINDING_ID, COUNT(*) AS duplicate_count
-FROM <SOURCE_OWNER>.RULE_FINDING
-GROUP BY FINDING_ID
+SELECT ITEM_KEY, COUNT(*) AS duplicate_count
+FROM <SOURCE_OWNER>.PRODUCT_CATALOG_ITEM
+GROUP BY ITEM_KEY
 HAVING COUNT(*) > 1;
 
-SELECT COUNT(*) AS null_finding_ids
-FROM <SOURCE_OWNER>.RULE_FINDING
-WHERE FINDING_ID IS NULL;
+SELECT COUNT(*) AS null_item_keys
+FROM <SOURCE_OWNER>.PRODUCT_CATALOG_ITEM
+WHERE ITEM_KEY IS NULL;
 ```
 
 Check for orphaned history:
 
 ```sql
 SELECT COUNT(*) AS orphan_history_rows
-FROM <SOURCE_OWNER>.RULE_FINDING_HISTORY h
-LEFT JOIN <SOURCE_OWNER>.RULE_FINDING p
-    ON p.FINDING_ID = h.FINDING_ID
-WHERE p.FINDING_ID IS NULL;
+FROM <SOURCE_OWNER>.PRODUCT_PRICE_HISTORY h
+LEFT JOIN <SOURCE_OWNER>.PRODUCT_CATALOG_ITEM p
+    ON p.ITEM_KEY = h.ITEM_KEY
+WHERE p.ITEM_KEY IS NULL;
 ```
 
 Embedding is reasonable when the maximum history count remains controlled and the resulting document stays well below MongoDB's 16 MiB BSON document limit. Keep history as a separate collection if it can grow indefinitely, is queried independently, or has a separate lifecycle.
@@ -120,14 +116,14 @@ Embedding is reasonable when the maximum history count remains controlled and th
 
 Confirm:
 
-- Whether `FINDING_ID` is a declared primary key, a unique key, or merely unique in current data.
+- Whether `ITEM_KEY` is a declared primary key, a unique key, or merely unique in current data.
 - The exact foreign-key relationship.
 - Nullable columns.
 - Oracle `NUMBER` precision and scale.
 - Timestamp types and timezone semantics.
-- Maximum lengths of finding text and identifier columns.
+- Maximum lengths of product names, change reasons, and identifier columns.
 
-Relational Migrator can inherit a declared single-column primary key into MongoDB `_id`. If the parent has no declared primary key, its default is an autogenerated `ObjectId`. In that case, retain `findingId` as a separate field and create a unique MongoDB index only after proving the field is non-null and unique.
+Relational Migrator can inherit a declared single-column primary key into MongoDB `_id`. If the parent has no declared primary key, its default is an autogenerated `ObjectId`. In that case, retain `itemKey` as a separate field and create a unique MongoDB index only after proving the field is non-null and unique.
 
 ### 1.4 Run Pre-Migration Analysis
 
@@ -217,7 +213,7 @@ A saved Relational Migrator connection can be reused across projects and migrati
 
 Recommended practice:
 
-- Save connection metadata using a clear name such as `oracle-sat-rule-findings` or `mongodb-sat-rule-findings`.
+- Save connection metadata using a clear name such as `oracle-sat-product-catalog` or `mongodb-sat-product-catalog`.
 - Add the correct environment tag.
 - Enter secrets in the credential fields rather than embedding them in documentation.
 - Avoid saving personal credentials on a shared Relational Migrator server.
@@ -261,48 +257,45 @@ Recommended project naming:
 Sanitized example:
 
 ```text
-rules-findings-oracle-to-mongodb-sat
+catalog-pricing-oracle-to-mongodb-sat
 ```
 
 For **Initial mappings**:
 
 1. Select **Start with a recommended MongoDB schema**.
-2. Keep `RULE_FINDING` as a top-level collection.
-3. Do not create `RULE_FINDING_HISTORY` as a second top-level collection when the approved design is to embed its rows.
+2. Keep `PRODUCT_CATALOG_ITEM` as a top-level collection.
+3. Do not create `PRODUCT_PRICE_HISTORY` as a second top-level collection when the approved design is to embed its rows.
 4. Use `camelCase` for MongoDB field names.
 
 One project can contain multiple related tables and multiple migration jobs. Do not create one project per table. Create a separate project when the tables belong to another application domain, require an unrelated document model, or target a different MongoDB database.
 
 ## 5. Create the Parent Mapping
 
-Map `RULE_FINDING` as new documents in:
+Map `PRODUCT_CATALOG_ITEM` as new documents in:
 
 ```text
-ruleFindings
+catalogItems
 ```
 
 Suggested fields:
 
 | Source column | MongoDB field | Treatment |
 |---|---|---|
-| `FINDING_ID` | `findingId` | Retain; parent/child business key |
-| `SOURCE_TABLE_ID` | `sourceTableId` | Retain |
-| `SOURCE_TABLE_NAME` | `sourceTableName` | Retain |
-| `RULE_ID` | `ruleId` | Retain |
-| `MATCH_SOURCE_ID` | `matchedSourceId` | Retain |
-| `MATCH_SOURCE_TYPE_ID` | `matchedSourceTypeId` | Retain |
-| `MATCH_TYPE` | `matchType` | Retain |
-| `MATCH_ID` | `matchId` | Retain |
-| `SUBJECT_ID` | `subjectId` | Retain |
-| `SUBJECT_TABLE` | `subjectTable` | Retain |
-| `CREATE_TIMESTAMP` | `createdAt` | Map to BSON Date |
-| `UPDATE_TIMESTAMP` | `updatedAt` | Map to BSON Date |
-| `FINDING` | `finding` | Retain |
+| `ITEM_KEY` | `itemKey` | Retain; parent/child business key |
+| `SKU` | `sku` | Retain |
+| `PRODUCT_NAME` | `productName` | Retain |
+| `CATEGORY_CODE` | `categoryCode` | Retain |
+| `SUPPLIER_KEY` | `supplierKey` | Retain |
+| `CURRENT_PRICE` | `currentPrice` | Map to the approved decimal type |
+| `CURRENCY_CODE` | `currencyCode` | Retain |
+| `ACTIVE_FLAG` | `active` | Convert to the agreed Boolean representation |
+| `CREATED_AT` | `createdAt` | Map to BSON Date |
+| `UPDATED_AT` | `updatedAt` | Map to BSON Date |
 
 ### `_id` decision
 
-- If `FINDING_ID` is a declared, non-null, single-column Oracle primary key, consider **Single Inherited Primary Key**.
-- If it is only a unique constraint or a logical key, keep the default `ObjectId` for the walkthrough and retain `findingId`.
+- If `ITEM_KEY` is a declared, non-null, single-column Oracle primary key, consider **Single Inherited Primary Key**.
+- If it is only a unique constraint or a logical key, keep the default `ObjectId` for the walkthrough and retain `itemKey`.
 - Document the decision before production migration because changing `_id` later is disruptive.
 
 ## 6. Create the Embedded History Mapping
@@ -319,10 +312,10 @@ If **Embedded array** is disabled:
 4. If the source relationship remains unavailable, add a synthetic one-to-many foreign key:
 
 ```text
-Parent table:  RULE_FINDING
-Parent field:  FINDING_ID
-Child table:   RULE_FINDING_HISTORY
-Child field:   FINDING_ID
+Parent table:  PRODUCT_CATALOG_ITEM
+Parent field:  ITEM_KEY
+Child table:   PRODUCT_PRICE_HISTORY
+Child field:   ITEM_KEY
 Cardinality:   One-to-many
 ```
 
@@ -330,37 +323,34 @@ Prefer the real Oracle constraint when it can be imported. Use a synthetic relat
 
 ### 6.2 Add the embedded array
 
-Select `RULE_FINDING_HISTORY`, click **+ Add**, and configure:
+Select `PRODUCT_PRICE_HISTORY`, click **+ Add**, and configure:
 
 ```text
 Migrate table as: Embedded array
-Parent collection: ruleFindings
+Parent collection: catalogItems
 Prefix: (root)
-Field name: history
-Foreign-key link: FINDING_ID relationship
+Field name: priceHistory
+Foreign-key link: ITEM_KEY relationship
 ```
 
-Use `history`, not an autogenerated name that repeats the full table or collection name. The parent document already supplies the context.
+Use `priceHistory`, not an autogenerated name that repeats the full table or collection name. The parent document already supplies the context.
 
 ### 6.3 Embedded field treatment
 
 | Source column | MongoDB field | Treatment |
 |---|---|---|
-| generated embedded `_id` | — | Exclude when `historyId` is retained |
-| `HISTORY_ID` | `historyId` | Retain |
-| `FINDING_ID` | — | Exclude; redundant parent join key |
-| `SOURCE_TABLE_ID` | `sourceTableId` | Retain as historical snapshot |
-| `SOURCE_TABLE_NAME` | `sourceTableName` | Retain as historical snapshot |
-| `RULE_ID` | `ruleId` | Retain as historical snapshot |
-| `MATCH_SOURCE_ID` | `matchedSourceId` | Retain |
-| `MATCH_SOURCE_NAME` | `matchedSourceName` | Retain |
-| `MATCH_SOURCE_TYPE_ID` | `matchedSourceTypeId` | Retain |
-| `FINDING` | `finding` | Retain as historical snapshot |
-| `ACTION` | `action` | Retain |
-| `ORIGINAL_TIMESTAMP` | `originalTimestamp` | Retain |
-| `EVENT_TIMESTAMP` | `recordedAt` | Retain |
+| generated embedded `_id` | — | Exclude when `priceEventId` is retained |
+| `PRICE_EVENT_KEY` | `priceEventId` | Retain |
+| `ITEM_KEY` | — | Exclude; redundant parent join key |
+| `PREVIOUS_PRICE` | `previousPrice` | Retain as historical snapshot |
+| `NEW_PRICE` | `newPrice` | Retain as historical snapshot |
+| `CURRENCY_CODE` | `currencyCode` | Retain |
+| `CHANGE_REASON` | `changeReason` | Retain |
+| `CHANGE_ACTION` | `changeAction` | Retain |
+| `EFFECTIVE_AT` | `effectiveAt` | Retain |
+| `RECORDED_AT` | `recordedAt` | Retain |
 
-Repeated rule, source, match, and finding fields should remain in history when they capture the state at the time of the event. Remove them only after the application owner confirms they are redundant rather than historical snapshots.
+Repeated price and currency fields should remain in the child row when they capture the state at the time of the event. Remove them only after the application owner confirms they are redundant rather than historical snapshots.
 
 ### 6.4 Sort the history array
 
@@ -372,7 +362,7 @@ In the embedded-array mapping:
 4. Configure:
 
 ```text
-Sort by: EVENT_TIMESTAMP
+Sort by: RECORDED_AT
 Order: Ascending
 Limit: No limit
 ```
@@ -388,7 +378,7 @@ Use BSON Date when millisecond precision is sufficient and add a mapping note:
 ```text
 Oracle TIMESTAMP(6) has microsecond precision. BSON Date preserves
 millisecond precision; sub-millisecond digits may be truncated.
-Use historyId as a secondary ordering key.
+Use priceEventId as a secondary ordering key.
 ```
 
 If exact microsecond fidelity is required, use a supported String or Long conversion strategy and document how the application will query and compare that representation. Relational Migrator 1.16 added Oracle timestamp conversion options and full-precision String conversions.
@@ -400,8 +390,8 @@ Open **JSON Schema** and review the sample document.
 Confirm:
 
 - There is one root collection.
-- `history` is an array under the root document.
-- The embedded row does not repeat `findingId`.
+- `priceHistory` is an array under the root document.
+- The embedded row does not repeat `itemKey`.
 - The embedded row does not contain an unnecessary generated `_id`.
 - Oracle numbers map to intentional BSON numeric types.
 - Timestamps use the approved precision strategy.
@@ -466,7 +456,7 @@ Built-in verification should be enabled, but also perform model-specific checks.
 The MongoDB root-document count should equal the valid parent-row count:
 
 ```javascript
-db.ruleFindings.countDocuments()
+db.catalogItems.countDocuments()
 ```
 
 ### 9.2 Total embedded-history count
@@ -474,10 +464,10 @@ db.ruleFindings.countDocuments()
 The total number of embedded elements should equal the valid, joined history-row count:
 
 ```javascript
-db.ruleFindings.aggregate([
+db.catalogItems.aggregate([
   {
     $project: {
-      historyCount: { $size: { $ifNull: ["$history", []] } }
+      historyCount: { $size: { $ifNull: ["$priceHistory", []] } }
     }
   },
   {
@@ -494,21 +484,21 @@ db.ruleFindings.aggregate([
 Inspect parents with multiple history entries:
 
 ```javascript
-db.ruleFindings.find(
-  { "history.1": { $exists: true } },
-  { findingId: 1, history: 1 }
+db.catalogItems.find(
+  { "priceHistory.1": { $exists: true } },
+  { itemKey: 1, priceHistory: 1 }
 ).limit(10)
 ```
 
-If timestamp values can collide after microsecond-to-millisecond conversion, use `historyId` as a deterministic secondary ordering key in application logic.
+If timestamp values can collide after microsecond-to-millisecond conversion, use `priceEventId` as a deterministic secondary ordering key in application logic.
 
 ### 9.4 Validate representative records
 
 Compare sampled records across Oracle and MongoDB for:
 
 - Parent identifiers
-- Rule and match fields
-- Finding text
+- SKU, category, and supplier fields
+- Price, currency, and change-reason values
 - Null handling
 - Timestamp precision and timezone interpretation
 - History element count and order
@@ -519,9 +509,9 @@ Compare sampled records across Oracle and MongoDB for:
 After confirming uniqueness, consider:
 
 ```javascript
-db.ruleFindings.createIndex(
-  { findingId: 1 },
-  { unique: true, name: "uq_findingId" }
+db.catalogItems.createIndex(
+  { itemKey: 1 },
+  { unique: true, name: "uq_itemKey" }
 )
 ```
 
@@ -553,13 +543,16 @@ Beginning with Relational Migrator 1.15, released October 17, 2025, MongoDB move
 - It cannot be enabled through a local checkbox or normal `user.properties` setting.
 - Upgrading the standalone tool does not unlock CDC.
 
+An **AMP engagement** is a scoped modernization engagement with MongoDB's account and delivery teams. It is not simply a feature flag, community download, or separately documented self-service CDC plug-in. MongoDB publicly describes AMP as a combination of platform tooling, a delivery framework, and delivery engineers. The account team determines access, commercial scope, deployment components, and implementation responsibilities.
+
 To pursue CDC through Relational Migrator:
 
 1. Contact the organization's MongoDB account representative.
-2. Request an AMP migration assessment or engagement.
-3. Confirm support for the source Oracle version, the target MongoDB deployment type, network isolation, and security requirements.
-4. Obtain the AMP-specific deployment, Oracle logging, privileges, monitoring, recovery, and cutover procedure.
-5. Test CDC correctness for embedded arrays before production cutover.
+2. Request an **AMP assessment for Oracle-to-MongoDB Continuous Sync (CDC)**.
+3. Provide the Oracle version and topology, data volume and change rate, downtime target, MongoDB target type, document mappings, and network/security constraints.
+4. Confirm support for the target deployment, including self-managed MongoDB where applicable.
+5. Obtain the AMP-specific tooling/access, deployment plan, Oracle logging and privilege requirements, monitoring, recovery, validation, and cutover procedure.
+6. Test CDC correctness for embedded arrays before production cutover.
 
 For regulated or isolated environments, confirm early whether AMP delivery and connectivity satisfy organizational requirements.
 
