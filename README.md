@@ -68,3 +68,7 @@ All diagrams and scripts in this repository must use generic labels. Do not incl
 ## Disclaimer
 
 These diagrams and scripts are generic examples and are not production deployment specifications.
+
+## MongoDB GitLab CI/CD Sample
+
+- [End-to-end sanitized project](mongodb-ops/samples/sanitized/gitlab-cicd/README.md)

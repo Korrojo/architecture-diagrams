@@ -1,0 +1,7 @@
+# Replace these example groups with the actual GitLab groups.
+/.gitlab-ci.yml                         @platform-engineering @mongodb-admins
+/config/                                @mongodb-admins
+/scripts/                               @mongodb-admins
+/src/mongodb_cicd/                      @mongodb-admins
+/infrastructure/                        @cloud-security @platform-engineering
+/runner/                                @linux-admins @platform-engineering

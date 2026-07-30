@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadMongoCicdParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter"
+      ],
+      "Resource": "arn:aws:ssm:REGION:ACCOUNT_ID:parameter/mongodb-cicd/*"
+    },
+    {
+      "Sid": "ReadMongoCicdSecrets",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:mongodb-cicd/*"
+    },
+    {
+      "Sid": "DecryptApprovedConfigurationKey",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt"
+      ],
+      "Resource": "arn:aws:kms:REGION:ACCOUNT_ID:key/KMS_KEY_ID",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": [
+            "ssm.REGION.amazonaws.com",
+            "secretsmanager.REGION.amazonaws.com"
+          ]
+        }
+      }
+    }
+  ]
+}

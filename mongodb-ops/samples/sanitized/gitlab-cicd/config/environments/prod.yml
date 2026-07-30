@@ -1,0 +1,27 @@
+environment: prod
+
+aws:
+  region_variable: AWS_REGION
+
+mongodb:
+  uri_parameter: /mongodb-cicd/prod/mongodb/connection-uri
+  deployment_secret: mongodb-cicd/prod/mongodb/deployment-user
+  database: sample_app_prod
+  collection: orders
+  index:
+    name: ix_customerId
+    keys:
+      - field: customerId
+        direction: 1
+    unique: false
+
+ops_manager:
+  base_url_parameter: /mongodb-cicd/prod/ops-manager/base-url
+  project_id_parameter: /mongodb-cicd/prod/ops-manager/project-id
+  api_key_secret: mongodb-cicd/prod/ops-manager/api-key
+  new_user_secret: mongodb-cicd/prod/mongodb/orders-reader
+  database: sample_app_prod
+  collection: orders
+  role_name: ordersCollectionReader
+  authentication_database: sample_app_prod
+
