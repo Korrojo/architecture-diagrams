@@ -1,0 +1,10 @@
+# /etc/systemd/system/gitlab-runner.service.d/override.conf
+# Conservative limits for a Runner sharing a host with another application.
+# Confirm these values with the Linux and application owners.
+
+[Service]
+CPUQuota=100%
+MemoryHigh=3G
+MemoryMax=4G
+TasksMax=512
+LimitNOFILE=65536
