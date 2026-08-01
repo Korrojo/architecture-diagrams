@@ -21,8 +21,13 @@ The repository is organized by operational responsibility so that routine checks
 | `tests/integration/` | Tests requiring a controlled MongoDB environment. |
 | `samples/sanitized/` | Generic example inputs and outputs only. |
 | `docs/runbooks/` | Operational procedures, decisions, recovery instructions, and change runbooks. |
+| [`docs/presentations/`](docs/presentations/controlled-mongodb-changes.md) | Technical presentations, including visible slide content and speaker notes. |
 
 See [`scripts/README.md`](scripts/README.md) for the distinction among health checks, diagnostics, performance analysis, maintenance, inventory, and other script categories.
+
+## Presentations
+
+- [Controlled MongoDB Changes: CI/CD with Ops Manager](docs/presentations/controlled-mongodb-changes.md)
 
 ## Organization principles
 
