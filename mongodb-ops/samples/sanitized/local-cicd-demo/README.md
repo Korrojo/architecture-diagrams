@@ -1,6 +1,6 @@
 # Local MongoDB Change Promotion Demo
 
-This sanitized project demonstrates a complete `DEV -> SAT -> PROD` MongoDB
+This sanitized project demonstrates a complete `DEV -> TEST -> PERF -> PROD` MongoDB
 change lifecycle from a local shell. It intentionally contains no GitLab
 pipeline, runner, Harness, Jenkins, or other CI/CD executor.
 
@@ -8,8 +8,8 @@ It demonstrates:
 
 1. Local files that mimic AWS Systems Manager Parameter Store and AWS Secrets
    Manager.
-2. A local MongoDB deployment with three databases representing DEV, SAT, and
-   PROD.
+2. A local MongoDB deployment with four databases representing DEV, TEST, PERF,
+   and PROD.
 3. Explicit database change and rollback scripts for a collection and index.
 4. Explicit Ops Manager change and rollback scripts for an authoritative
    custom role, managed user, and missing `HOST_DOWN` alert.
@@ -36,9 +36,10 @@ change only the intended object, redact output, and wait for goal state.
 local-cicd-demo/
 ├── bin/
 │   ├── deploy.sh
-│   └── initialize_local_demo.sh
+│   ├── initialize_local_demo.sh
+│   └── verify_project_files.sh
 ├── config/
-│   ├── environments/{dev,sat,prod}.yml
+│   ├── environments/{dev,test,perf,prod}.yml
 │   └── local/*.example
 ├── scripts/
 │   ├── database/
@@ -55,8 +56,38 @@ local-cicd-demo/
 │       └── 005_rollback_host_down_alert.py
 ├── src/mongodb_local_cicd/
 ├── tests/
+├── bootstrap_project.sh
 └── docker-compose.yml
 ```
+
+## Copy-and-Paste Project Bootstrap
+
+For a machine where cloning or downloading the repository is unavailable:
+
+1. Copy `bootstrap_project.sh` as a single file.
+2. Run it from the directory where the project should be created:
+
+   ```bash
+   bash bootstrap_project.sh ./mongodb-local-cicd-demo
+   ```
+
+3. Copy the following long source files into the generated paths:
+
+   ```text
+   src/mongodb_local_cicd/database_changes.py
+   src/mongodb_local_cicd/migrations.py
+   src/mongodb_local_cicd/ops_manager.py
+   ```
+
+4. Confirm that the required files are present:
+
+   ```bash
+   ./mongodb-local-cicd-demo/bin/verify_project_files.sh
+   ```
+
+The bootstrap script creates the directories and all remaining project files.
+It accepts any destination path, contains no credentials, and refuses to
+overwrite an existing destination unless `--force` is supplied.
 
 ## Local Setup
 
@@ -103,13 +134,14 @@ Or plan the complete ordered change set:
 ./bin/deploy.sh dev plan all
 ```
 
-## Apply DEV, SAT, and PROD
+## Apply DEV, TEST, PERF, and PROD
 
 Database-only demonstration:
 
 ```bash
 ./bin/deploy.sh dev apply database
-./bin/deploy.sh sat apply database
+./bin/deploy.sh test apply database
+./bin/deploy.sh perf apply database
 ./bin/deploy.sh prod apply database --confirm PROD
 ```
 
@@ -179,4 +211,3 @@ pytest
   `.local/state/<environment>/` and verifies the configuration fingerprint
   before deletion.
 - This project is a teaching sample, not a production deployment specification.
-

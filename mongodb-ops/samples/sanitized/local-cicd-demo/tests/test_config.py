@@ -15,6 +15,13 @@ def test_environment_config_is_explicit() -> None:
     assert config["ops_manager"]["alert"]["event_type"] == "HOST_DOWN"
 
 
+@pytest.mark.parametrize("environment", ["dev", "test", "perf", "prod"])
+def test_standard_environment_set_is_supported(environment: str) -> None:
+    config = load_environment_config(environment)
+    assert config["environment"] == environment
+    assert config["mongodb"]["database"] == f"cicd_demo_{environment}"
+
+
 def test_unknown_environment_is_rejected() -> None:
     with pytest.raises(ConfigurationError):
         load_environment_config("qa")
@@ -42,4 +49,3 @@ def test_local_provider_separates_parameters_and_secrets(tmp_path: Path) -> None
     assert provider.get_secret_json("demo/credentials")["username"] == "demo"
     with pytest.raises(LocalConfigurationError):
         provider.get_secret_json("/demo/uri")
-

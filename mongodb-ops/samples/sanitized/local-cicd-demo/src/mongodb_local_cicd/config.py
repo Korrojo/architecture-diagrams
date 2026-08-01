@@ -8,7 +8,7 @@ from typing import Any
 
 import yaml
 
-ALLOWED_ENVIRONMENTS = frozenset({"dev", "sat", "prod"})
+ALLOWED_ENVIRONMENTS = frozenset({"dev", "test", "perf", "prod"})
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -83,4 +83,3 @@ def local_path(name: str, project_root: Path | None = None) -> Path:
     """Resolve a file under the ignored .local directory."""
     root = (project_root or PROJECT_ROOT).resolve()
     return root / ".local" / name
-

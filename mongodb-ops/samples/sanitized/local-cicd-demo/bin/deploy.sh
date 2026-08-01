@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 <dev|sat|prod> <plan|apply|rollback> [database|ops-manager|all] [--confirm PROD]" >&2
+  echo "Usage: $0 <dev|test|perf|prod> <plan|apply|rollback> [database|ops-manager|all] [--confirm PROD]" >&2
   exit 2
 fi
 
@@ -11,7 +11,7 @@ operation="$2"
 scope="${3:-all}"
 shift "$(( $# >= 3 ? 3 : 2 ))"
 
-case "${environment}" in dev|sat|prod) ;; *) echo "Invalid environment: ${environment}" >&2; exit 2 ;; esac
+case "${environment}" in dev|test|perf|prod) ;; *) echo "Invalid environment: ${environment}" >&2; exit 2 ;; esac
 case "${operation}" in plan|apply|rollback) ;; *) echo "Invalid operation: ${operation}" >&2; exit 2 ;; esac
 case "${scope}" in database|ops-manager|all) ;; *) echo "Invalid scope: ${scope}" >&2; exit 2 ;; esac
 

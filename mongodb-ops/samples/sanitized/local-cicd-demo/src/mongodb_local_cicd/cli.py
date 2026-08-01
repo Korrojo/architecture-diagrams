@@ -15,7 +15,7 @@ from .local_config import LocalConfigProvider
 
 def parser(description: str) -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=description)
-    result.add_argument("--environment", choices=("dev", "sat", "prod"))
+    result.add_argument("--environment", choices=("dev", "test", "perf", "prod"))
     result.add_argument(
         "--apply",
         action="store_true",
@@ -64,4 +64,3 @@ def guarded_main(main: Callable[[], int]) -> int:
     except Exception as exc:
         print(f"Change failed: {exc}", file=sys.stderr)
         return 1
-
