@@ -1,12 +1,14 @@
 {
   "/mongodb-local-cicd/dev/mongodb/uri": "mongodb://localhost:27017",
-  "/mongodb-local-cicd/sat/mongodb/uri": "mongodb://localhost:27017",
+  "/mongodb-local-cicd/test/mongodb/uri": "mongodb://localhost:27017",
+  "/mongodb-local-cicd/perf/mongodb/uri": "mongodb://localhost:27017",
   "/mongodb-local-cicd/prod/mongodb/uri": "mongodb://localhost:27017",
   "/mongodb-local-cicd/dev/ops-manager/base-url": "https://ops-manager-lower.example.invalid",
   "/mongodb-local-cicd/dev/ops-manager/project-id": "replace-with-lower-project-id",
-  "/mongodb-local-cicd/sat/ops-manager/base-url": "https://ops-manager-sat.example.invalid",
-  "/mongodb-local-cicd/sat/ops-manager/project-id": "replace-with-sat-project-id",
+  "/mongodb-local-cicd/test/ops-manager/base-url": "https://ops-manager-test.example.invalid",
+  "/mongodb-local-cicd/test/ops-manager/project-id": "replace-with-test-project-id",
+  "/mongodb-local-cicd/perf/ops-manager/base-url": "https://ops-manager-perf.example.invalid",
+  "/mongodb-local-cicd/perf/ops-manager/project-id": "replace-with-perf-project-id",
   "/mongodb-local-cicd/prod/ops-manager/base-url": "https://ops-manager-prod.example.invalid",
   "/mongodb-local-cicd/prod/ops-manager/project-id": "replace-with-prod-project-id"
 }
-
