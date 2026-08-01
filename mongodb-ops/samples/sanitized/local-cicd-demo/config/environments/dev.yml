@@ -1,0 +1,35 @@
+environment: dev
+
+mongodb:
+  uri_parameter: /mongodb-local-cicd/dev/mongodb/uri
+  deployment_secret: mongodb-local-cicd/dev/mongodb/deployer
+  database: cicd_demo_dev
+  migration_collection: _schema_migrations
+  collection: customers
+  index:
+    name: ux_customers_email
+    keys:
+      - field: email
+        direction: 1
+    unique: true
+
+ops_manager:
+  base_url_parameter: /mongodb-local-cicd/dev/ops-manager/base-url
+  project_id_parameter: /mongodb-local-cicd/dev/ops-manager/project-id
+  api_key_secret: mongodb-local-cicd/dev/ops-manager/api-key
+  managed_user_secret: mongodb-local-cicd/dev/mongodb/demo-user
+  authentication_database: cicd_demo_dev
+  role:
+    name: cicdDemoCustomerReader
+    database: cicd_demo_dev
+    collection: customers
+    actions: [find]
+  alert:
+    event_type: HOST_DOWN
+    enabled: true
+    notifications:
+      - typeName: GROUP
+        roles: [GROUP_OWNER]
+        delayMin: 5
+        intervalMin: 60
+

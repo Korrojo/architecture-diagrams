@@ -69,6 +69,11 @@ All diagrams and scripts in this repository must use generic labels. Do not incl
 
 These diagrams and scripts are generic examples and are not production deployment specifications.
 
+## Local MongoDB Change Promotion Demo
+
+- [Standalone DEV → SAT → PROD demonstration](mongodb-ops/samples/sanitized/local-cicd-demo/README.md)
+
 ## MongoDB GitLab CI/CD Sample
 
 - [End-to-end sanitized project](mongodb-ops/samples/sanitized/gitlab-cicd/README.md)
+
